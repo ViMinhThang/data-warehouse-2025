@@ -8,21 +8,24 @@ class LogDatabase(BaseDatabase):
 
     def insert_log(
         self,
-        process_name: str,
-        config_id: Optional[int],
-        status: str,
-        message: str = None,
+        stage,
+        config_id,
+        status,
+        ticker=None,
+        log_level="INFO",
+        message=None,
+        error_message=None,
     ):
-
         query = """
-        INSERT INTO logs (stage, config_id, status,log_level, message,error_message, create_time,update_time)
-        VALUES (%s, %s, %s, %s, %s);
-        """
+        INSERT INTO log (stage, config_id, ticker, status, log_level, message, error_message, create_time)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, NOW());
+            """
+
         try:
             self.execute_non_query(
-                query, (process_name, config_id, status, message, datetime.utcnow())
+                query,
+                (stage, config_id, ticker, status, log_level, message, error_message),
             )
-            logging.info(f"🪵 Inserted log: {process_name} [{status}]")
         except Exception as e:
             logging.error(f"Failed to insert log: {e}")
 

@@ -1,0 +1,37 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Extract Module",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "extract_module.extract",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Debug Load Staging Module",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "load_staging_module.load_staging",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Debug Transform Module",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "transform_module.transform",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Debug Load DW Module",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "load_dw_module.load_dw",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

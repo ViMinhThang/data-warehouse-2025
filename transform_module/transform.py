@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from db.config_transform_db import ConfigTransformDatabase
 from db.log_db import LogDatabase
 from email_service.email_service import EmailService
-from utils.util import compute_stock_indicators
+from utils.extract_util import compute_stock_indicators
 
 # ==========================
 # Logging & .env setup
@@ -17,6 +17,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler()],
 )
+
 
 # ==========================
 # Khởi tạo Service
@@ -90,19 +91,25 @@ def main():
         for cfg in configs:
             config_id = cfg["id"]
             try:
-                log_db.insert_log("TRANSFORM", config_id, "PROCESSING", "Start transform.")
+                log_db.insert_log(
+                    "TRANSFORM", config_id, "PROCESSING", "Start transform."
+                )
                 config_db.mark_config_status(config_id, "PROCESSING")
 
                 # Thực thi transform
                 run_transform(cfg)
 
                 # Thành công
-                log_db.insert_log("TRANSFORM", config_id, "SUCCESS", "Transform completed.")
+                log_db.insert_log(
+                    "TRANSFORM", config_id, "SUCCESS", "Transform completed."
+                )
                 config_db.mark_config_status(config_id, "SUCCESS")
 
             except Exception as e:
                 logging.error(f"Lỗi khi transform config ID={config_id}: {e}")
-                log_db.insert_log("TRANSFORM", config_id, "FAILURE", error_message=str(e))
+                log_db.insert_log(
+                    "TRANSFORM", config_id, "FAILURE", error_message=str(e)
+                )
                 config_db.mark_config_status(config_id, "FAILURE")
 
                 # Gửi email cảnh báo

@@ -1,0 +1,2 @@
+CREATE DATABASE config
+CREATE DATABASE staging
