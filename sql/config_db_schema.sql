@@ -3,8 +3,10 @@
 DROP TABLE IF EXISTS log CASCADE;
 DROP TABLE IF EXISTS config_load_staging CASCADE;
 DROP TABLE IF EXISTS config_extract CASCADE;
+DROP TABLE IF EXISTS config_transform CASCADE;
+DROP TABLE IF EXISTS config_load_dw CASCADE;
 
-
+-- Etract
 CREATE TABLE config_extract (
     id SERIAL PRIMARY KEY,
     tickers TEXT NOT NULL,
@@ -27,6 +29,51 @@ INSERT INTO config_extract (
     ('VNINDEX,VIC,VCB', '1mo', '1d', './output/vn', 3, TRUE, 'Crawl dữ liệu cổ phiếu Việt Nam', 'admin', 'admin'),
     ('BTC-USD,ETH-USD', '1mo', '1h', './output/crypto', 2, TRUE, 'Crawl dữ liệu crypto', 'admin', 'admin'),
     ('META,AMZN,NVDA', '1mo', '1d', './output/tech', 3, FALSE, 'Config bị tạm ngưng', 'admin', 'admin');
+
+-- Transform
+CREATE TABLE config_transform (
+    id SERIAL PRIMARY KEY,
+    transform_name VARCHAR(100) NOT NULL,
+    calculate_rsi BOOLEAN DEFAULT FALSE,
+    rsi_window INT DEFAULT 14,
+    calculate_roc BOOLEAN DEFAULT FALSE,
+    roc_window INT DEFAULT 10,
+    calculate_bb BOOLEAN DEFAULT FALSE,
+    bb_window INT DEFAULT 20,
+    source_table VARCHAR(100) NOT NULL,
+    destination_table VARCHAR(100) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    note VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO config_transform (
+    transform_name, calculate_rsi, calculate_roc, calculate_bb, 
+    source_table, destination_table, is_active, note
+) VALUES
+    ('RSI Calculation', TRUE, FALSE, FALSE, 'stg_market_prices', 'stg_transform_market_prices', TRUE, 'Tính RSI từ dữ liệu staging'),
+    ('ROC Calculation', FALSE, TRUE, FALSE, 'stg_market_prices', 'stg_transform_market_prices', TRUE, 'Tính ROC từ dữ liệu staging'),
+    ('Bollinger Bands', FALSE, FALSE, TRUE, 'stg_market_prices', 'stg_transform_market_prices', TRUE, 'Tính Bollinger Bands');
+
+-- LOAD_DW
+CREATE TABLE config_load_dw (
+    id SERIAL PRIMARY KEY,
+    source_table VARCHAR(100) NOT NULL,
+    target_table VARCHAR(100) NOT NULL,
+    load_mode VARCHAR(20) DEFAULT 'append',  -- append | overwrite | truncate
+    is_active BOOLEAN DEFAULT TRUE,
+    note VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO config_load_dw (
+    source_table, target_table, load_mode, is_active, note
+) VALUES
+    ('stg_transform_market_prices', 'dw_market_prices', 'append', TRUE, 'Load dữ liệu transform vào DW market_prices');
+
+
 
 
 CREATE TABLE config_load_staging (
