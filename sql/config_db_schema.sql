@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS config_load_staging CASCADE;
 DROP TABLE IF EXISTS config_extract CASCADE;
 DROP TABLE IF EXISTS config_transform CASCADE;
 DROP TABLE IF EXISTS config_load_dw CASCADE;
+DROP TABLE IF EXISTS config_transform_staging CASCADE;
 
 -- Etract
 CREATE TABLE config_extract (
@@ -102,6 +103,18 @@ INSERT INTO config_load_staging (
     ('./output/crypto', 'stg_market_prices', 'csv', TRUE, ',', 'overwrite', 2, TRUE, 'Load dữ liệu crypto vào staging (ghi đè)', 'admin', 'admin'),
     ('./output/tech', 'stg_market_prices', 'csv', TRUE, ',', 'append', 3, FALSE, 'Load tạm ngưng', 'admin', 'admin');
 
+CREATE TABLE config_transform_staging (
+    id SERIAL PRIMARY KEY,
+    transform_name VARCHAR(100) NOT NULL,
+    description TEXT,
+    source_table VARCHAR(100) NOT NULL,       
+    destination_table VARCHAR(100) NOT NULL,  
+    transformations JSONB DEFAULT '[]',       
+    is_active BOOLEAN DEFAULT TRUE,
+    note VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 CREATE TABLE log (
     id SERIAL PRIMARY KEY,
