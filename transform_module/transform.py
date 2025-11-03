@@ -1,10 +1,12 @@
 import os
 import time
+import json
 import logging
 import pandas as pd
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
+from db.config_transform_staging_db import ConfigTransformStagingDatabase
 from db.config_transform_db import ConfigTransformDatabase
 from db.log_db import LogDatabase
 from email_service.email_service import EmailService
@@ -12,12 +14,10 @@ from utils.util import compute_stock_indicators
 
 
 # ==========================
-# 1️⃣ SETUP
+# 1️SETUP
 # ==========================
-# Load file .env
 load_dotenv(dotenv_path=os.path.join(os.getcwd(), ".env"))
 
-# Cấu hình logging (có màu cho dễ nhìn)
 logging.basicConfig(
     level=logging.INFO,
     format="\033[92m%(asctime)s [%(levelname)s]\033[0m %(message)s",
@@ -25,9 +25,6 @@ logging.basicConfig(
 )
 
 
-# ==========================
-# 2️⃣ KHỞI TẠO SERVICE
-# ==========================
 def init_services():
     """Khởi tạo kết nối DB và email service."""
     db_params = {
@@ -39,8 +36,7 @@ def init_services():
         "dbname_staging": os.getenv("DB_NAME_STAGING", "staging"),
     }
 
-    # Kết nối DB cấu hình
-    config_db = ConfigTransformDatabase(
+    cfg_stg_db = ConfigTransformStagingDatabase(
         host=db_params["host"],
         dbname=db_params["dbname_config"],
         user=db_params["user"],
@@ -48,7 +44,14 @@ def init_services():
         port=db_params["port"],
     )
 
-    # Kết nối DB ghi log
+    cfg_tech_db = ConfigTransformDatabase(
+        host=db_params["host"],
+        dbname=db_params["dbname_config"],
+        user=db_params["user"],
+        password=db_params["password"],
+        port=db_params["port"],
+    )
+
     log_db = LogDatabase(
         host=db_params["host"],
         dbname=db_params["dbname_config"],
@@ -57,112 +60,141 @@ def init_services():
         port=db_params["port"],
     )
 
-    # Kết nối tới DB staging bằng SQLAlchemy (để load/push dataframe)
-    staging_engine = create_engine(
+    engine = create_engine(
         f"postgresql://{db_params['user']}:{db_params['password']}@{db_params['host']}:{db_params['port']}/{db_params['dbname_staging']}"
     )
 
-    # Email service
     email_service = EmailService(
         username=os.getenv("EMAIL_USERNAME"),
         password=os.getenv("EMAIL_PASSWORD"),
         simulate=os.getenv("EMAIL_SIMULATE", "True").lower() == "true",
     )
 
-    return config_db, log_db, email_service, staging_engine
+    return cfg_stg_db, cfg_tech_db, log_db, email_service, engine
 
 
 # ==========================
-# 3️⃣ HÀM THỰC HIỆN TRANSFORM
+# 2️TRANSFORM STAGING (BASIC)
 # ==========================
-def run_transform(cfg, engine):
+def run_transform_staging(cfg, engine):
     config_id = cfg["id"]
-    source_table = cfg["source_table"]           # ví dụ: staging.raw_stock
-    destination_table = cfg["destination_table"] # ví dụ: staging.transform_stock
+    source = cfg["source_table"]
+    dest = cfg["destination_table"]
+    logging.info(f"Transform STAGING {source} → {dest}")
 
-    logging.info(f"🔄 Transform config ID={config_id}: {source_table} → {destination_table}")
-
-    start_time = time.time()
-
-    # Đọc dữ liệu từ bảng nguồn (DB staging)
-    query = f"SELECT * FROM {source_table}"
-    df = pd.read_sql(query, engine)
+    start = time.time()
+    df = pd.read_sql(f"SELECT * FROM {source}", engine)
     if df.empty:
-        raise ValueError(f"Bảng {source_table} không có dữ liệu để transform.")
+        raise ValueError(f"Bảng {source} trống, không có dữ liệu transform.")
 
-    logging.info(f"📊 Đã đọc {len(df)} bản ghi từ {source_table}")
-
-    # Tính toán chỉ báo kỹ thuật (RSI, ROC, Bollinger Band,...)
     try:
-        df_transformed = compute_stock_indicators(df, ticker_col="ticker")
+        transformations = json.loads(cfg.get("transformations", "[]"))
+        for step in transformations:
+            action = step.get("action")
+            if action == "rename":
+                df.rename(columns={step["from"]: step["to"]}, inplace=True)
+            elif action == "drop":
+                df.drop(columns=step["columns"], inplace=True, errors="ignore")
+            elif action == "convert_type":
+                df[step["column"]] = df[step["column"]].astype(step["to_type"])
     except Exception as e:
-        logging.warning(f"⚠️ Lỗi khi tính toán chỉ báo: {e}")
-        df_transformed = df.copy()
+        logging.warning(f"Lỗi khi thực hiện transform JSON: {e}")
 
-    # Xóa dữ liệu cũ trong bảng đích và ghi mới
+    # Ghi vào bảng đích
     with engine.connect() as conn:
-        conn.execute(text(f"TRUNCATE TABLE {destination_table};"))
-    df_transformed.to_sql(destination_table, engine, if_exists="append", index=False)
+        conn.execute(text(f"TRUNCATE TABLE {dest};"))
+    df.to_sql(dest, engine, if_exists="append", index=False)
 
-    duration = round(time.time() - start_time, 2)
-    logging.info(f"✅ Transform thành công {len(df_transformed)} bản ghi trong {duration}s.")
-    return len(df_transformed), duration
+    duration = round(time.time() - start, 2)
+    logging.info(f"Transform STAGING thành công {len(df)} bản ghi ({duration}s).")
+    return len(df), duration
 
 
 # ==========================
-# 4️⃣ MAIN PROCESS
+# 3️TRANSFORM TECHNICAL (RSI, ROC,...)
+# ==========================
+def run_transform_technical(cfg, engine):
+    config_id = cfg["id"]
+    source = cfg["source_table"]
+    dest = cfg["destination_table"]
+    logging.info(f"Transform TECHNICAL {source} → {dest}")
+
+    start = time.time()
+    df = pd.read_sql(f"SELECT * FROM {source}", engine)
+    if df.empty:
+        raise ValueError(f"Bảng {source} trống, không có dữ liệu transform.")
+
+    try:
+        df_trans = compute_stock_indicators(df, ticker_col="ticker")
+    except Exception as e:
+        logging.warning(f"Lỗi khi tính chỉ báo: {e}")
+        df_trans = df.copy()
+
+    with engine.connect() as conn:
+        conn.execute(text(f"TRUNCATE TABLE {dest};"))
+    df_trans.to_sql(dest, engine, if_exists="append", index=False)
+
+    duration = round(time.time() - start, 2)
+    logging.info(f"Transform TECHNICAL thành công {len(df_trans)} bản ghi ({duration}s).")
+    return len(df_trans), duration
+
+
+# ==========================
+# 4️MAIN
 # ==========================
 def main():
-    logging.info("=== 🚀 Bắt đầu quá trình TRANSFORM ===")
-    config_db, log_db, email_service, engine = init_services()
-    success_count, failure_count = 0, 0
+    logging.info("Bắt đầu quá trình TRANSFORM (STAGING + TECHNICAL)")
+    cfg_stg_db, cfg_tech_db, log_db, email_service, engine = init_services()
+    success, fail = 0, 0
 
     try:
-        configs = config_db.get_active_configs()
-        if not configs:
-            logging.warning("⚠️ Không có config transform nào đang active.")
-            return
-
-        for cfg in configs:
-            config_id = cfg["id"]
+        # === Bước 1: Transform STAGING ===
+        stg_configs = cfg_stg_db.get_active_configs()
+        for cfg in stg_configs:
             try:
-                # Cập nhật trạng thái PROCESSING
-                log_db.insert_log("TRANSFORM", config_id, "PROCESSING", "Bắt đầu transform.")
-                config_db.mark_config_status(config_id, "PROCESSING")
-
-                # Thực hiện transform
-                rows, duration = run_transform(cfg, engine)
-
-                # Log thành công
-                log_db.insert_log("TRANSFORM", config_id, "SUCCESS", f"Transform thành công {rows} bản ghi.")
-                config_db.mark_config_status(config_id, "SUCCESS")
-                success_count += 1
-
+                cfg_stg_db.mark_config_status(cfg["id"], "PROCESSING")
+                log_db.insert_log("TRANSFORM_STAGING", cfg["id"], "PROCESSING", "Bắt đầu transform staging.")
+                run_transform_staging(cfg, engine)
+                cfg_stg_db.mark_config_status(cfg["id"], "SUCCESS")
+                log_db.insert_log("TRANSFORM_STAGING", cfg["id"], "SUCCESS", "Hoàn tất transform staging.")
+                success += 1
             except Exception as e:
-                # Log thất bại và gửi email
-                logging.error(f"❌ Lỗi khi transform config ID={config_id}: {e}")
-                log_db.insert_log("TRANSFORM", config_id, "FAILURE", error_message=str(e))
-                config_db.mark_config_status(config_id, "FAILURE")
-                failure_count += 1
-
+                fail += 1
+                cfg_stg_db.mark_config_status(cfg["id"], "FAILURE")
+                log_db.insert_log("TRANSFORM_STAGING", cfg["id"], "FAILURE", str(e))
                 email_service.send_email(
                     to_addrs=[os.getenv("EMAIL_ADMIN", "admin@example.com")],
-                    subject=f"[ETL TRANSFORM] Lỗi Config ID={config_id}",
-                    body=f"Lỗi khi xử lý transform:\n\n{e}",
+                    subject=f"[ETL Transform Staging] Lỗi Config ID={cfg['id']}",
+                    body=f"Lỗi transform staging:\n{e}",
                 )
 
-    except Exception as e:
-        logging.error(f"🔥 Lỗi tổng thể trong TRANSFORM main(): {e}")
+        # === Bước 2: Transform TECHNICAL ===
+        tech_configs = cfg_tech_db.get_active_configs()
+        for cfg in tech_configs:
+            try:
+                cfg_tech_db.mark_config_status(cfg["id"], "PROCESSING")
+                log_db.insert_log("TRANSFORM_TECH", cfg["id"], "PROCESSING", "Bắt đầu transform kỹ thuật.")
+                run_transform_technical(cfg, engine)
+                cfg_tech_db.mark_config_status(cfg["id"], "SUCCESS")
+                log_db.insert_log("TRANSFORM_TECH", cfg["id"], "SUCCESS", "Hoàn tất transform kỹ thuật.")
+                success += 1
+            except Exception as e:
+                fail += 1
+                cfg_tech_db.mark_config_status(cfg["id"], "FAILURE")
+                log_db.insert_log("TRANSFORM_TECH", cfg["id"], "FAILURE", str(e))
+                email_service.send_email(
+                    to_addrs=[os.getenv("EMAIL_ADMIN", "admin@example.com")],
+                    subject=f"[ETL Transform Technical] Lỗi Config ID={cfg['id']}",
+                    body=f"Lỗi transform kỹ thuật:\n{e}",
+                )
 
     finally:
-        config_db.close()
+        cfg_stg_db.close()
+        cfg_tech_db.close()
         log_db.close()
         engine.dispose()
-        logging.info(f"🏁 Kết thúc TRANSFORM — Thành công: {success_count}, Thất bại: {failure_count}")
+        logging.info(f"Hoàn tất TRANSFORM — Thành công: {success}, Thất bại: {fail}")
 
 
-# ==========================
-# 5️⃣ ENTRY POINT
-# ==========================
 if __name__ == "__main__":
     main()
