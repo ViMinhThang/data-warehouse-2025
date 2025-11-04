@@ -10,7 +10,7 @@ from db.config_transform_staging_db import ConfigTransformStagingDatabase
 from db.config_transform_db import ConfigTransformDatabase
 from db.log_db import LogDatabase
 from email_service.email_service import EmailService
-from utils.util import compute_stock_indicators
+from utils.extract_util import compute_stock_indicators
 
 
 # ==========================
@@ -135,7 +135,9 @@ def run_transform_technical(cfg, engine):
     df_trans.to_sql(dest, engine, if_exists="append", index=False)
 
     duration = round(time.time() - start, 2)
-    logging.info(f"Transform TECHNICAL thành công {len(df_trans)} bản ghi ({duration}s).")
+    logging.info(
+        f"Transform TECHNICAL thành công {len(df_trans)} bản ghi ({duration}s)."
+    )
     return len(df_trans), duration
 
 
@@ -153,10 +155,20 @@ def main():
         for cfg in stg_configs:
             try:
                 cfg_stg_db.mark_config_status(cfg["id"], "PROCESSING")
-                log_db.insert_log("TRANSFORM_STAGING", cfg["id"], "PROCESSING", "Bắt đầu transform staging.")
+                log_db.insert_log(
+                    "TRANSFORM_STAGING",
+                    cfg["id"],
+                    "PROCESSING",
+                    "Bắt đầu transform staging.",
+                )
                 run_transform_staging(cfg, engine)
                 cfg_stg_db.mark_config_status(cfg["id"], "SUCCESS")
-                log_db.insert_log("TRANSFORM_STAGING", cfg["id"], "SUCCESS", "Hoàn tất transform staging.")
+                log_db.insert_log(
+                    "TRANSFORM_STAGING",
+                    cfg["id"],
+                    "SUCCESS",
+                    "Hoàn tất transform staging.",
+                )
                 success += 1
             except Exception as e:
                 fail += 1
@@ -173,10 +185,20 @@ def main():
         for cfg in tech_configs:
             try:
                 cfg_tech_db.mark_config_status(cfg["id"], "PROCESSING")
-                log_db.insert_log("TRANSFORM_TECH", cfg["id"], "PROCESSING", "Bắt đầu transform kỹ thuật.")
+                log_db.insert_log(
+                    "TRANSFORM_TECH",
+                    cfg["id"],
+                    "PROCESSING",
+                    "Bắt đầu transform kỹ thuật.",
+                )
                 run_transform_technical(cfg, engine)
                 cfg_tech_db.mark_config_status(cfg["id"], "SUCCESS")
-                log_db.insert_log("TRANSFORM_TECH", cfg["id"], "SUCCESS", "Hoàn tất transform kỹ thuật.")
+                log_db.insert_log(
+                    "TRANSFORM_TECH",
+                    cfg["id"],
+                    "SUCCESS",
+                    "Hoàn tất transform kỹ thuật.",
+                )
                 success += 1
             except Exception as e:
                 fail += 1
