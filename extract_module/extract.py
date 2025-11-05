@@ -3,9 +3,7 @@ from datetime import datetime
 import pandas as pd
 from dotenv import load_dotenv
 
-from db.config_extract_db import ConfigExtractDatabase
-from db.log_db import LogDatabase
-from email_service.email_service import EmailService
+from utils.service_util import init_services
 from utils.logger_util import log_message
 from utils.extract_util import (
     parse_tickers,
@@ -15,27 +13,6 @@ from utils.extract_util import (
 )
 
 load_dotenv()
-
-
-def init_services():
-    db_params = {
-        "host": os.getenv("DB_HOST"),
-        "dbname": os.getenv("DB_NAME_CONFIG"),
-        "user": os.getenv("DB_USER"),
-        "password": os.getenv("DB_PASSWORD"),
-        "port": int(os.getenv("DB_PORT", 5432)),
-    }
-
-    config_db = ConfigExtractDatabase(**db_params)
-    log_db = LogDatabase(**db_params)
-    email_service = EmailService(
-        username=os.getenv("EMAIL_USERNAME"),
-        password=os.getenv("EMAIL_PASSWORD"),
-        simulate=os.getenv("EMAIL_SIMULATE", "True").lower() == "true",
-    )
-
-    print("Đã khởi tạo thành công các service.")
-    return config_db, log_db, email_service
 
 
 def extract_ticker_data(ticker, period, interval, config_id, log_db):
@@ -144,7 +121,10 @@ def process_config(config, log_db, email_service):
 
 def main():
     print("=== Bắt đầu quá trình EXTRACT ===")
-    config_db, log_db, email_service = init_services()
+    services = init_services(['config_extract_db', 'log_db', 'email_service'])
+    config_db = services['config_extract_db']
+    log_db = services['log_db']
+    email_service = services['email_service']
 
     try:
         configs = config_db.get_active_configs()

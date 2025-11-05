@@ -5,9 +5,7 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
-from db.config_load_db import ConfigLoadDatabase
-from db.log_db import LogDatabase
-from email_service.email_service import EmailService
+from utils.service_util import init_services
 
 # ==========================================
 # 1️SETUP
@@ -19,57 +17,6 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler()],
 )
-
-
-# ==========================================
-# ==========================================
-def init_services():
-    """Khởi tạo kết nối DB config, log, email, và engine."""
-    db_params = {
-        "host": os.getenv("DB_HOST"),
-        "user": os.getenv("DB_USER"),
-        "password": os.getenv("DB_PASSWORD"),
-        "port": int(os.getenv("DB_PORT", 5432)),
-        "dbname_config": os.getenv("DB_NAME_CONFIG", "config"),
-        "dbname_staging": os.getenv("DB_NAME_STAGING", "staging"),
-    }
-
-    # Kết nối đến DB config (đọc cấu hình load)
-    config_db = ConfigLoadDatabase(
-        host=db_params["host"],
-        dbname=db_params["dbname_config"],
-        user=db_params["user"],
-        password=db_params["password"],
-        port=db_params["port"],
-    )
-
-    # DB log
-    log_db = LogDatabase(
-        host=db_params["host"],
-        dbname=db_params["dbname_config"],
-        user=db_params["user"],
-        password=db_params["password"],
-        port=db_params["port"],
-    )
-
-    # Email service
-    email_service = EmailService(
-        username=os.getenv("EMAIL_USERNAME"),
-        password=os.getenv("EMAIL_PASSWORD"),
-        simulate=os.getenv("EMAIL_SIMULATE", "True").lower() == "true",
-    )
-
-    # Engine cho DB staging (đọc dữ liệu transform)
-    staging_engine = create_engine(
-        f"postgresql://{db_params['user']}:{db_params['password']}@{db_params['host']}:{db_params['port']}/{db_params['dbname_staging']}"
-    )
-
-    # Engine cho DW (ghi dữ liệu)
-    dw_engine = create_engine(
-        f"postgresql://{db_params['user']}:{db_params['password']}@{db_params['host']}:{db_params['port']}/dw"
-    )
-
-    return config_db, log_db, email_service, staging_engine, dw_engine
 
 
 # ==========================================
@@ -151,7 +98,12 @@ def load_to_dw(staging_engine, dw_engine):
 # ==========================================
 def main():
     logging.info("=== Bắt đầu LOAD DW ===")
-    config_db, log_db, email_service, staging_engine, dw_engine = init_services()
+    services = init_services(['config_load_db', 'log_db', 'email_service', 'staging_engine', 'dw_engine'])
+    config_db = services['config_load_db']
+    log_db = services['log_db']
+    email_service = services['email_service']
+    staging_engine = services['staging_engine']
+    dw_engine = services['dw_engine']
 
     try:
         configs = config_db.get_active_configs()

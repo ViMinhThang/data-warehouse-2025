@@ -6,10 +6,7 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
-from db.config_transform_staging_db import ConfigTransformStagingDatabase
-from db.config_transform_db import ConfigTransformDatabase
-from db.log_db import LogDatabase
-from email_service.email_service import EmailService
+from utils.service_util import init_services
 from utils.extract_util import compute_stock_indicators
 
 
@@ -23,54 +20,6 @@ logging.basicConfig(
     format="\033[92m%(asctime)s [%(levelname)s]\033[0m %(message)s",
     handlers=[logging.StreamHandler()],
 )
-
-
-def init_services():
-    """Khởi tạo kết nối DB và email service."""
-    db_params = {
-        "host": os.getenv("DB_HOST"),
-        "user": os.getenv("DB_USER"),
-        "password": os.getenv("DB_PASSWORD"),
-        "port": int(os.getenv("DB_PORT", 5432)),
-        "dbname_config": os.getenv("DB_NAME_CONFIG", "config"),
-        "dbname_staging": os.getenv("DB_NAME_STAGING", "staging"),
-    }
-
-    cfg_stg_db = ConfigTransformStagingDatabase(
-        host=db_params["host"],
-        dbname=db_params["dbname_config"],
-        user=db_params["user"],
-        password=db_params["password"],
-        port=db_params["port"],
-    )
-
-    cfg_tech_db = ConfigTransformDatabase(
-        host=db_params["host"],
-        dbname=db_params["dbname_config"],
-        user=db_params["user"],
-        password=db_params["password"],
-        port=db_params["port"],
-    )
-
-    log_db = LogDatabase(
-        host=db_params["host"],
-        dbname=db_params["dbname_config"],
-        user=db_params["user"],
-        password=db_params["password"],
-        port=db_params["port"],
-    )
-
-    engine = create_engine(
-        f"postgresql://{db_params['user']}:{db_params['password']}@{db_params['host']}:{db_params['port']}/{db_params['dbname_staging']}"
-    )
-
-    email_service = EmailService(
-        username=os.getenv("EMAIL_USERNAME"),
-        password=os.getenv("EMAIL_PASSWORD"),
-        simulate=os.getenv("EMAIL_SIMULATE", "True").lower() == "true",
-    )
-
-    return cfg_stg_db, cfg_tech_db, log_db, email_service, engine
 
 
 # ==========================
@@ -146,7 +95,18 @@ def run_transform_technical(cfg, engine):
 # ==========================
 def main():
     logging.info("Bắt đầu quá trình TRANSFORM (STAGING + TECHNICAL)")
-    cfg_stg_db, cfg_tech_db, log_db, email_service, engine = init_services()
+    services = init_services([
+        'config_transform_staging_db',
+        'config_transform_db',
+        'log_db',
+        'email_service',
+        'staging_engine'
+    ])
+    cfg_stg_db = services['config_transform_staging_db']
+    cfg_tech_db = services['config_transform_db']
+    log_db = services['log_db']
+    email_service = services['email_service']
+    engine = services['staging_engine']
     success, fail = 0, 0
 
     try:
