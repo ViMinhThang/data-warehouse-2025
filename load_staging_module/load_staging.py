@@ -1,5 +1,4 @@
 import os
-import io
 from dotenv import load_dotenv
 from db.config_load_staging_db import ConfigLoadStagingDatabase
 from db.staging_db import StagingDatabase
@@ -53,14 +52,13 @@ def load_csv_to_staging(config, staging_db, log_db):
         target_table = config.get("target_table")
         delimiter = config.get("delimiter", ",")
         has_header = config.get("has_header", True)
-        load_mode = config.get("load_mode", "append").lower()
 
         log_message(
             log_db,
             "LOAD_STAGING",
             config_id,
             "PROCESSING",
-            f"Đang xử lý {target_table}...",
+            message=f"Đang xử lý {target_table}...",
         )
 
         latest_file = get_latest_csv_file(source_path, log_db, config_id)
@@ -69,21 +67,14 @@ def load_csv_to_staging(config, staging_db, log_db):
             "LOAD_STAGING",
             config_id,
             "PROCESSING",
-            f"Đang load file: {latest_file}",
+            message=f"Đang load file: {latest_file}",
         )
 
         df = read_csv_file(latest_file, delimiter, has_header, log_db, config_id)
         if df.empty:
             raise ValueError(f"File {latest_file} rỗng, không có dữ liệu để load.")
 
-        # Xử lý load_mode
-        if load_mode == "truncate":
-            staging_db.truncate_table(target_table)
-        elif load_mode == "overwrite":
-            staging_db.drop_table(target_table)
-        elif load_mode != "append":
-            raise ValueError(f"Giá trị load_mode không hợp lệ: {load_mode}")
-
+        # Chỉ append (vì truncate đã được thực hiện 1 lần trước đó)
         staging_db.copy_from_dataframe(df, target_table)
 
         log_message(
@@ -91,7 +82,7 @@ def load_csv_to_staging(config, staging_db, log_db):
             "LOAD_STAGING",
             config_id,
             "SUCCESS",
-            f"Load thành công {len(df)} bản ghi vào {target_table} ({load_mode.upper()})",
+            message=f"Load thành công {len(df)} bản ghi vào {target_table}",
         )
 
         return True
@@ -102,7 +93,7 @@ def load_csv_to_staging(config, staging_db, log_db):
             "LOAD_STAGING",
             config_id,
             "FAILURE",
-            f"Lỗi trong load_csv_to_staging(): {e}",
+            message=f"Lỗi trong load_csv_to_staging(): {e}",
         )
         raise
 
@@ -128,6 +119,28 @@ def main():
             )
             return
 
+        # Truncate tất cả bảng staging 1 lần duy nhất
+        staging_tables = {cfg["target_table"] for cfg in configs}
+        for table in staging_tables:
+            try:
+                staging_db.truncate_table(table)
+                log_message(
+                    log_db,
+                    "LOAD_STAGING",
+                    None,
+                    "SUCCESS",
+                    message=f"Đã truncate bảng {table} trước khi load.",
+                )
+            except Exception as e:
+                log_message(
+                    log_db,
+                    "LOAD_STAGING",
+                    None,
+                    "WARNING",
+                    message=f"Không thể truncate bảng {table}: {e}",
+                )
+
+        #  Sau đó load tuần tự từng config
         for config in configs:
             config_id = config["id"]
             log_message(
@@ -135,7 +148,7 @@ def main():
                 "LOAD_STAGING",
                 config_id,
                 "READY",
-                "Bắt đầu xử lý config load staging.",
+                message="Bắt đầu xử lý config load staging.",
             )
 
             load_success = False
@@ -153,7 +166,7 @@ def main():
                         "LOAD_STAGING",
                         config_id,
                         "FAILURE",
-                        f"Lỗi lần {retry_count}: {e}",
+                        message=f"Lỗi lần {retry_count}: {e}",
                     )
                     email_service.send_email(
                         to_addrs=[os.getenv("EMAIL_ADMIN", "admin@example.com")],
@@ -167,7 +180,7 @@ def main():
                     "LOAD_STAGING",
                     config_id,
                     "FAILURE",
-                    f"Load staging thất bại sau {max_retries} lần retry.",
+                    message=f"Load staging thất bại sau {max_retries} lần retry.",
                 )
 
     except Exception as e:

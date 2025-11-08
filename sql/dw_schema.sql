@@ -1,5 +1,3 @@
-\connect dw;
-
 
 DROP TABLE IF EXISTS dim_stock CASCADE;
 DROP TABLE IF EXISTS dim_datetime CASCADE;

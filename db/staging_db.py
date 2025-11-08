@@ -4,10 +4,26 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from typing import Any, List, Dict
 import pandas as pd
+from sqlalchemy import create_engine
 from db.base_db import BaseDatabase
 
 
 class StagingDatabase(BaseDatabase):
+    def __init__(self, host, dbname, user, password, port=5432):
+        super().__init__(host, dbname, user, password, port)
+        # Tạo thêm SQLAlchemy engine cho Pandas
+        self.engine = create_engine(
+            f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}"
+        )
+
+    def read_data(self, table_name: str) -> pd.DataFrame:
+        try:
+            df = pd.read_sql(f"SELECT * FROM {table_name}", self.engine)
+            logging.info(f"Successfully read {len(df)} rows from {table_name}")
+            return df
+        except Exception as e:
+            logging.error(f"Error reading data from {table_name}: {e}")
+            raise
 
     def copy_from_dataframe(self, df, table_name):
 
@@ -61,3 +77,33 @@ class StagingDatabase(BaseDatabase):
             logging.error(f"Lỗi khi insert records vào {table_name}: {e}")
             self.conn.rollback()
             raise
+
+    def truncate_table(self, table_name: str):
+        """Truncates a table in the staging database."""
+        try:
+            with self.conn.cursor() as cursor:
+                cursor.execute(f"TRUNCATE TABLE {table_name}")
+            self.conn.commit()
+            logging.info(f"Table {table_name} truncated successfully.")
+        except Exception as e:
+            logging.error(f"Error truncating table {table_name}: {e}")
+            self.conn.rollback()
+            raise
+
+    def drop_table(self, table_name: str):
+        """Drops a table in the staging database."""
+        try:
+            with self.conn.cursor() as cursor:
+                cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
+            self.conn.commit()
+            logging.info(f"Table {table_name} dropped successfully.")
+        except Exception as e:
+            logging.error(f"Error dropping table {table_name}: {e}")
+            self.conn.rollback()
+            raise
+
+    def close(self):
+        super().close()
+        if self.engine:
+            self.engine.dispose()
+            logging.info("Closed Staging DB engine")

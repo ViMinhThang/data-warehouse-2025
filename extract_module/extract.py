@@ -1,4 +1,5 @@
 import os
+import shutil
 from datetime import datetime
 import pandas as pd
 from dotenv import load_dotenv
@@ -14,6 +15,9 @@ from utils.extract_util import (
     build_records_from_df,
 )
 
+# ==========================
+# 1️ SETUP
+# ==========================
 load_dotenv()
 
 
@@ -38,19 +42,31 @@ def init_services():
     return config_db, log_db, email_service
 
 
+# ==========================
+# 2️ EXTRACT LOGIC
+# ==========================
 def extract_ticker_data(ticker, period, interval, config_id, log_db):
     log_message(
-        log_db, "EXTRACT", config_id, "PROCESSING", ticker, f"Đang extract {ticker}..."
+        log_db,
+        "EXTRACT",
+        config_id,
+        "PROCESSING",
+        message=f"Đang extract {ticker}...",
     )
 
     data = fetch_yfinance_data(ticker, period, interval)
     if data.empty:
-        raise ValueError("Không có dữ liệu trả về từ Yahoo Finance")
+        raise ValueError(f"Không có dữ liệu trả về cho {ticker} từ Yahoo Finance.")
 
     indicators = compute_stock_indicators(data, ticker)
     records = build_records_from_df(ticker, indicators)
+
     log_message(
-        log_db, "EXTRACT", config_id, "SUCCESS", ticker, f"Extract {ticker} thành công"
+        log_db,
+        "EXTRACT",
+        config_id,
+        "SUCCESS",
+        message=f"Extract {ticker} thành công.",
     )
     return records
 
@@ -60,15 +76,26 @@ def run_crawl_data_with_config(config, log_db, config_id):
     period = config.get("period", "1mo")
     interval = config.get("interval", "1d")
 
-    all_rows = []
+    log_message(
+        log_db,
+        "EXTRACT",
+        config_id,
+        "PROCESSING",
+        message=f"Bắt đầu crawl dữ liệu cho {len(tickers)} ticker.",
+    )
 
+    all_rows = []
     for ticker in tickers:
         try:
             records = extract_ticker_data(ticker, period, interval, config_id, log_db)
             all_rows.extend(records)
         except Exception as e:
             log_message(
-                log_db, "EXTRACT", config_id, "FAILURE", ticker, error_message=str(e)
+                log_db,
+                "EXTRACT",
+                config_id,
+                "FAILURE",
+                message=f"Lỗi khi extract {ticker}: {e}",
             )
 
     if not all_rows:
@@ -94,7 +121,11 @@ def save_extract_result(df, config, config_id, log_db):
 
     df.round(4).to_csv(file_path, index=False)
     log_message(
-        log_db, "EXTRACT", config_id, "SUCCESS", message=f"Đã ghi file {file_path}"
+        log_db,
+        "EXTRACT",
+        config_id,
+        "SUCCESS",
+        message=f"Đã ghi file kết quả: {file_path}",
     )
     return file_path
 
@@ -102,6 +133,19 @@ def save_extract_result(df, config, config_id, log_db):
 def process_config(config, log_db, email_service):
     config_id = config["id"]
     log_message(log_db, "EXTRACT", config_id, "READY", message="Bắt đầu xử lý config.")
+
+    # Dọn thư mục output cũ
+    output_path = config.get("output_path")
+    if output_path and os.path.exists(output_path):
+        shutil.rmtree(output_path)
+        log_message(
+            log_db,
+            "EXTRACT",
+            config_id,
+            "SUCCESS",
+            ticker=config.get("tickers", []),
+            message=f"Đã xóa thư mục output: {output_path}",
+        )
 
     craw_success = False
     retry_count = 0
@@ -112,7 +156,6 @@ def process_config(config, log_db, email_service):
             df = run_crawl_data_with_config(config, log_db, config_id)
             save_extract_result(df, config, config_id, log_db)
             craw_success = True
-
         except Exception as e:
             retry_count += 1
             log_message(
@@ -120,17 +163,21 @@ def process_config(config, log_db, email_service):
                 "EXTRACT",
                 config_id,
                 "FAILURE",
-                error_message=f"Lỗi lần {retry_count}: {e}",
+                message=f"Lỗi lần {retry_count}/{max_retries}: {e}",
             )
             email_service.send_email(
                 to_addrs=[os.getenv("EMAIL_ADMIN", "admin@example.com")],
-                subject=f"Lỗi Extract config ID={config_id}",
+                subject=f"[ETL Extract] Lỗi Config ID={config_id}",
                 body=f"Lỗi khi crawl dữ liệu:\n\n{e}",
             )
 
     if craw_success:
         log_message(
-            log_db, "EXTRACT", config_id, "SUCCESS", message="Extract hoàn tất."
+            log_db,
+            "EXTRACT",
+            config_id,
+            "SUCCESS",
+            message="Extract hoàn tất thành công.",
         )
     else:
         log_message(
@@ -142,9 +189,15 @@ def process_config(config, log_db, email_service):
         )
 
 
+# ==========================
+# 3️ MAIN
+# ==========================
 def main():
     print("=== Bắt đầu quá trình EXTRACT ===")
     config_db, log_db, email_service = init_services()
+
+    log_message(None, "EXTRACT", None, "INFO", message="Bắt đầu quá trình EXTRACT.")
+    success, fail = 0, 0
 
     try:
         configs = config_db.get_active_configs()
@@ -153,13 +206,29 @@ def main():
                 log_db,
                 "EXTRACT",
                 None,
-                "WARNING",
+                "FAILURE",
                 message="Không có config nào đang active.",
             )
             return
 
         for config in configs:
-            process_config(config, log_db, email_service)
+            try:
+                process_config(config, log_db, email_service)
+                success += 1
+            except Exception as e:
+                fail += 1
+                log_message(
+                    log_db,
+                    "EXTRACT",
+                    config.get("id"),
+                    "FAILURE",
+                    message=f"Lỗi xử lý config ID={config.get('id')}: {e}",
+                )
+                email_service.send_email(
+                    to_addrs=[os.getenv("EMAIL_ADMIN", "admin@example.com")],
+                    subject=f"[ETL Extract] Lỗi Config ID={config.get('id')}",
+                    body=f"Lỗi tổng thể trong process_config:\n\n{e}",
+                )
 
     except Exception as e:
         log_message(
@@ -167,11 +236,19 @@ def main():
             "EXTRACT",
             None,
             "FAILURE",
-            error_message=f"Lỗi tổng thể trong main(): {e}",
+            message=f"Lỗi tổng thể trong main(): {e}",
         )
+
     finally:
         config_db.close()
         log_db.close()
+        log_message(
+            None,
+            "EXTRACT",
+            None,
+            "INFO",
+            message=f"Hoàn tất EXTRACT — Thành công: {success}, Thất bại: {fail}",
+        )
         print("Kết thúc quá trình EXTRACT.")
 
 
