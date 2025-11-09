@@ -34,7 +34,7 @@ class LogDatabase(BaseDatabase):
         query = """
         SELECT * FROM log
         WHERE stage = %s AND (config_id = %s OR %s IS NULL)
-        ORDER BY created_at DESC
+        ORDER BY create_time DESC
         LIMIT 1;
         """
         rows = self.execute_query(query, (process_name, config_id, config_id))

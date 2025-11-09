@@ -143,7 +143,6 @@ def process_config(config, log_db, email_service):
             "EXTRACT",
             config_id,
             "SUCCESS",
-            ticker=config.get("tickers", []),
             message=f"Đã xóa thư mục output: {output_path}",
         )
 

@@ -13,7 +13,7 @@
       "name": "Debug Load Staging Module",
       "type": "debugpy",
       "request": "launch",
-      "module": "load_staging_module.load_staging",
+      "module": "extract_module.load_staging",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}"
     },

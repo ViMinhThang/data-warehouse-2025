@@ -108,6 +108,18 @@ def main():
     config_db, staging_db, log_db, email_service = init_services()
 
     try:
+        latest_extract_log = log_db.get_latest_log("EXTRACT", None)
+        if not latest_extract_log or latest_extract_log.get("status") != "SUCCESS":
+            log_message(
+                log_db,
+                "LOAD_STAGING",
+                None,
+                "WARNING",
+                message="Log EXTRACT mới nhất chưa thành công, bỏ qua quá trình LOAD_STAGING.",
+            )
+            print("Quá trình LOAD_STAGING bị bỏ qua vì EXTRACT chưa thành công.")
+            return
+
         configs = config_db.get_active_configs()
         if not configs:
             log_message(
@@ -140,7 +152,7 @@ def main():
                     message=f"Không thể truncate bảng {table}: {e}",
                 )
 
-        #  Sau đó load tuần tự từng config
+        # Sau đó load tuần tự từng config
         for config in configs:
             config_id = config["id"]
             log_message(
