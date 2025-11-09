@@ -11,20 +11,19 @@ class LogDatabase(BaseDatabase):
         stage,
         config_id,
         status,
-        ticker=None,
         log_level="INFO",
         message=None,
         error_message=None,
     ):
         query = """
-        INSERT INTO log (stage, config_id, ticker, status, log_level, message, error_message, create_time)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, NOW());
+        INSERT INTO log (stage, config_id, status, log_level, message, error_message, create_time)
+        VALUES (%s, %s, %s, %s, %s, %s, NOW());
             """
 
         try:
             self.execute_non_query(
                 query,
-                (stage, config_id, ticker, status, log_level, message, error_message),
+                (stage, config_id, status, log_level, message, error_message),
             )
         except Exception as e:
             logging.error(f"Failed to insert log: {e}")
@@ -35,7 +34,7 @@ class LogDatabase(BaseDatabase):
         query = """
         SELECT * FROM log
         WHERE stage = %s AND (config_id = %s OR %s IS NULL)
-        ORDER BY created_at DESC
+        ORDER BY create_time DESC
         LIMIT 1;
         """
         rows = self.execute_query(query, (process_name, config_id, config_id))

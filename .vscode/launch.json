@@ -13,7 +13,7 @@
       "name": "Debug Load Staging Module",
       "type": "debugpy",
       "request": "launch",
-      "module": "load_staging_module.load_staging",
+      "module": "extract_module.load_staging",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}"
     },
@@ -26,10 +26,10 @@
       "cwd": "${workspaceFolder}"
     },
     {
-      "name": "Debug Load DW Module",
+      "name": "Debug Load Data Warehouse Module",
       "type": "debugpy",
       "request": "launch",
-      "module": "load_dw_module.load_dw",
+      "module": "load_warehouse_module.load_warehouse",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}"
     }
