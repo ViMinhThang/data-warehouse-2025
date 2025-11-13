@@ -10,7 +10,7 @@ BEGIN
     SELECT rsi_window, roc_window, bb_window
     INTO v_rsi_window, v_roc_window, v_bb_window
     FROM dblink(
-        'dbname=config user=postgres password=204863 host=localhost port=5432',
+        'dbname=config user=fragile password=123456 host=localhost port=5432',
         'SELECT rsi_window, roc_window, bb_window
          FROM config_transform
          WHERE is_active = TRUE
@@ -73,12 +73,12 @@ BEGIN
           AND bb_upper IS NOT NULL AND bb_lower IS NOT NULL;
 
     -- Xuất CSV dim_stock và fact_stock_indicators
-    EXECUTE 'COPY dim_stock TO ''C:\\PostgresExports\\dim_stock.csv'' WITH CSV HEADER';
-    EXECUTE 'COPY fact_stock_indicators TO ''C:\\PostgresExports\\fact_stock_indicators.csv'' WITH CSV HEADER';
+    EXECUTE 'COPY dim_stock TO ''/home/fragile/PostgresExports/dim_stock.csv'' WITH CSV HEADER';
+    EXECUTE 'COPY fact_stock_indicators TO ''/home/fragile/PostgresExports/fact_stock_indicators.csv'' WITH CSV HEADER';
 
     -- Xóa dữ liệu staging
     TRUNCATE TABLE stg_market_prices;
 
-    RAISE NOTICE 'Transform thành công, stg_market_prices đã truncate và CSV dim_stock + fact đã xuất tại C:\Users\huynh\OneDrive\Desktop\warehousetest';
+
 END;
 $$;

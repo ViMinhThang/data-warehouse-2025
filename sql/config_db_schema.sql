@@ -178,8 +178,8 @@ INSERT INTO
     )
 VALUES
     (
-        'C:\\PostgresExports\\dim_stock.csv',
-        'C:\\PostgresExports\\fact_stock_indicators.csv',
+        '/home/fragile/PostgresExports/dim_stock.csv',
+        '/home/fragile/PostgresExports/fact_stock_indicators.csv',
         'sp_load_stock_files',
         TRUE,
         'admin',
