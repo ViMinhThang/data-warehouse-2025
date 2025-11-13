@@ -1,0 +1,85 @@
+body {
+  background: #f8f9fa;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.dashboard-container {
+  max-width: 1000px;
+  margin: 30px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.kpi-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 40px;
+}
+
+.kpi-card {
+  flex: 1;
+  color: white;
+  border-radius: 10px;
+  text-align: center;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.kpi-card h2 {
+  font-size: 2rem;
+  margin-bottom: 5px;
+}
+
+.kpi-card.blue {
+  background-color: #007bff;
+}
+
+.kpi-card.green {
+  background-color: #28a745;
+}
+
+.kpi-card.red {
+  background-color: #dc3545;
+}
+
+.chart-container {
+  background: #f1f3f6;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 40px;
+}
+
+.logs-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.logs-container th,
+.logs-container td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+
+.logs-container tr.failed {
+  background: #ffe6e6;
+}
+
+.logs-container tr.success {
+  background: #e8f7ea;
+}
+
+.logs-container th {
+  background-color: #007bff;
+  color: white;
+}
