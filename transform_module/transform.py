@@ -1,3 +1,4 @@
+import csv
 import os
 import logging
 from dotenv import load_dotenv
@@ -123,12 +124,32 @@ def run_transform_procedure(
         raise
 
 
+def export_table_to_csv(staging_db, table_name, file_path):
+    with staging_db.conn.cursor() as cursor:
+        cursor.execute(f"SELECT * FROM {table_name}")
+        rows = cursor.fetchall()
+        colnames = [desc[0] for desc in cursor.description]
+
+    with open(file_path, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(colnames)
+        writer.writerows(rows)
+
+
 def main():
     print("=== Bắt đầu quá trình TRANSFORM ===")
     config_db, staging_db, log_db, email_service = init_services()
 
     try:
         run_transform_procedure(staging_db, config_db, log_db, email_service)
+        export_table_to_csv(
+            staging_db, "dim_stock", "/home/fragile/PostgresExports/dim_stock.csv"
+        )
+        export_table_to_csv(
+            staging_db,
+            "fact_stock_indicators",
+            "/home/fragile/PostgresExports/fact_stock_indicators.csv",
+        )
     finally:
         config_db.close()
         staging_db.close()

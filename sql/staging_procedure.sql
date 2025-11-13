@@ -60,9 +60,6 @@ BEGIN
           AND rsi IS NOT NULL AND roc IS NOT NULL
           AND bb_upper IS NOT NULL AND bb_lower IS NOT NULL;
 
-    -- Xuất CSV dim_stock và fact_stock_indicators
-    EXECUTE 'COPY dim_stock TO ''/home/fragile/PostgresExports/dim_stock.csv'' WITH CSV HEADER';
-    EXECUTE 'COPY fact_stock_indicators TO ''/home/fragile/PostgresExports/fact_stock_indicators.csv'' WITH CSV HEADER';
 
     -- Xóa dữ liệu staging
     TRUNCATE TABLE stg_market_prices;
