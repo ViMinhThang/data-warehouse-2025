@@ -1,5 +1,7 @@
 import os
 from dotenv import load_dotenv
+import pandas as pd
+from sqlalchemy import text
 
 from db.config_dw_db import ConfigDWDatabase
 from db.dw_db import DWDatabase
@@ -41,48 +43,71 @@ def init_services():
     return config_db, dw_db, log_db, email_service
 
 
-def load_files_via_procedure(
-    dim_path: str, fact_path: str, procedure_name: str, dw_db: DWDatabase
-):
-    """Gọi procedure trong DW truyền 2 file CSV path"""
-    if not os.path.exists(dim_path):
-        raise FileNotFoundError(f"File {dim_path} không tồn tại.")
-    if not os.path.exists(fact_path):
-        raise FileNotFoundError(f"File {fact_path} không tồn tại.")
-
-    try:
-        dw_db.execute_non_query(
-            f"CALL {procedure_name}(%s, %s);", (dim_path, fact_path)
-        )
-        print(
-            f"Gọi procedure {procedure_name} thành công với dim_stock={dim_path}, fact_stock={fact_path}"
-        )
-    except Exception as e:
-        raise RuntimeError(f"Failed to call procedure: {e}")
-
-
 def process_dw_load(config, log_db, dw_db, email_service):
     config_id = config["id"]
     dim_path = config["dim_path"]
     fact_path = config["fact_path"]
-    procedure_name = config.get("procedure", "sp_load_stock_files")
+    procedure_name = config.get("procedure", "sp_load_stock_files_from_tmp")
 
     log_message(
         log_db,
         "LOAD_DW",
         config_id,
         "READY",
-        message=f"Bắt đầu load files dim_stock, fact_stock",
+        message="Bắt đầu load files dim_stock, fact_stock",
     )
 
     try:
-        load_files_via_procedure(dim_path, fact_path, procedure_name, dw_db)
+        engine = dw_db.engine
+        dim_df = pd.read_csv(dim_path)
+        fact_df = pd.read_csv(fact_path, parse_dates=["datetime_utc"])
+
+        with engine.begin() as conn:
+            # Tạo tmp table và load dữ liệu
+            conn.execute(text("DROP TABLE IF EXISTS tmp_dim_stock"))
+            conn.execute(
+                text(
+                    "CREATE TEMP TABLE tmp_dim_stock (stock_sk INT, ticker VARCHAR(20))"
+                )
+            )
+            dim_df.to_sql(
+                "tmp_dim_stock", conn, if_exists="append", index=False, method="multi"
+            )
+
+            conn.execute(text("DROP TABLE IF EXISTS tmp_fact_stock"))
+            conn.execute(
+                text(
+                    """
+                CREATE TEMP TABLE tmp_fact_stock (
+                    record_sk INT,
+                    stock_sk INT,
+                    datetime_utc TIMESTAMPTZ,
+                    close NUMERIC(12,4),
+                    volume BIGINT,
+                    diff NUMERIC(12,4),
+                    percent_change_close NUMERIC(12,6),
+                    rsi NUMERIC(8,4),
+                    roc NUMERIC(8,4),
+                    bb_upper NUMERIC(12,4),
+                    bb_lower NUMERIC(12,4),
+                    created_at TIMESTAMP
+                )
+            """
+                )
+            )
+            fact_df.to_sql(
+                "tmp_fact_stock", conn, if_exists="append", index=False, method="multi"
+            )
+
+            # Gọi procedure trong cùng session
+            conn.execute(text(f"CALL {procedure_name}()"))
+
         log_message(
             log_db,
             "LOAD_DW",
             config_id,
             "SUCCESS",
-            message=f"Load thành công dim_stock, fact_stock",
+            message="Load thành công dim_stock, fact_stock",
         )
     except Exception as e:
         log_message(
@@ -93,6 +118,62 @@ def process_dw_load(config, log_db, dw_db, email_service):
             subject=f"[ETL LOAD] Lỗi Config ID={config_id}",
             body=f"Lỗi khi load dữ liệu DW:\n\n{e}",
         )
+
+
+def load_csv_to_tmp_tables(dim_path: str, fact_path: str, dw_db: DWDatabase):
+    """
+    Load CSV vào các bảng tmp trong PostgreSQL (tmp_dim_stock, tmp_fact_stock)
+    Chỉ load dữ liệu, không insert vào bảng chính
+    """
+    if not os.path.exists(dim_path):
+        raise FileNotFoundError(f"File {dim_path} không tồn tại.")
+    if not os.path.exists(fact_path):
+        raise FileNotFoundError(f"File {fact_path} không tồn tại.")
+
+    engine = dw_db.engine
+
+    dim_df = pd.read_csv(dim_path)
+
+    with engine.begin() as conn:
+        conn.execute(text("DROP TABLE IF EXISTS tmp_dim_stock"))
+        conn.execute(
+            text(
+                """
+            CREATE TEMP TABLE tmp_dim_stock (
+                id INT,
+                ticker VARCHAR(20)
+            )
+        """
+            )
+        )
+    dim_df.to_sql("tmp_dim_stock", engine, if_exists="append", index=False)
+    print(f"Loaded {len(dim_df)} bản ghi vào tmp_dim_stock")
+
+    fact_df = pd.read_csv(fact_path, parse_dates=["datetime_utc"])
+
+    # Tạo bảng tmp_fact_stock
+    with engine.begin() as conn:
+        conn.execute("DROP TABLE IF EXISTS tmp_fact_stock")
+        conn.execute(
+            """
+            CREATE TEMP TABLE tmp_fact_stock (
+                record_sk INT,
+                stock_sk INT,
+                datetime_utc TIMESTAMPTZ,
+                close NUMERIC(12,4),
+                volume BIGINT,
+                diff NUMERIC(12,4),
+                percent_change_close NUMERIC(12,6),
+                rsi NUMERIC(8,4),
+                roc NUMERIC(8,4),
+                bb_upper NUMERIC(12,4),
+                bb_lower NUMERIC(12,4),
+                created_at TIMESTAMP
+            )
+        """
+        )
+    fact_df.to_sql("tmp_fact_stock", engine, if_exists="append", index=False)
+    print(f"Loaded {len(fact_df)} bản ghi vào tmp_fact_stock")
 
 
 def main():

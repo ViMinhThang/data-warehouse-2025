@@ -62,13 +62,15 @@ CREATE TABLE
         bb_window INT DEFAULT 20,
         source_table VARCHAR(100) NOT NULL,
         procedure_transform VARCHAR(255),
+        dim_path VARCHAR(255), -- Đường dẫn export dim_stock
+        fact_path VARCHAR(255), -- Đường dẫn export fact_stock_indicators
         is_active BOOLEAN DEFAULT TRUE,
         note VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
--- Seed data
+-- Seed data với dim_path và fact_path
 INSERT INTO
     config_transform (
         rsi_window,
@@ -76,6 +78,8 @@ INSERT INTO
         bb_window,
         source_table,
         procedure_transform,
+        dim_path,
+        fact_path,
         is_active,
         note
     )
@@ -85,7 +89,9 @@ VALUES
         10,
         20,
         'stg_market_prices',
-        'transform_market_prices',
+        'sp_transform_market_prices',
+        '/home/fragile/PostgresExports/dim_stock.csv',
+        '/home/fragile/PostgresExports/fact_stock_indicators.csv',
         TRUE,
         'Default transform for stock prices'
     );
@@ -180,7 +186,7 @@ VALUES
     (
         '/home/fragile/PostgresExports/dim_stock.csv',
         '/home/fragile/PostgresExports/fact_stock_indicators.csv',
-        'sp_load_stock_files',
+        'sp_load_stock_files_from_tmp',
         TRUE,
         'admin',
         'admin'
