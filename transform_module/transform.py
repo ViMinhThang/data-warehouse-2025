@@ -2,7 +2,7 @@ import os
 import logging
 from dotenv import load_dotenv
 from db.staging_db import StagingDatabase
-from db.config_load_staging_db import ConfigLoadStagingDatabase
+from db.config_transform_db import ConfigTransformDatabase
 from db.log_db import LogDatabase
 from email_service.email_service import EmailService
 from utils.logger_util import log_message
@@ -28,7 +28,7 @@ def init_services():
         "port": int(os.getenv("DB_PORT", 5432)),
     }
 
-    config_db = ConfigLoadStagingDatabase(**db_params_config)
+    config_db = ConfigTransformDatabase(**db_params_config)
     staging_db = StagingDatabase(**db_params_staging)
     log_db = LogDatabase(**db_params_config)
     email_service = EmailService(
@@ -41,10 +41,31 @@ def init_services():
     return config_db, staging_db, log_db, email_service
 
 
+def get_transform_config(config_db):
+    """Lấy rsi_window, roc_window, bb_window từ config"""
+    query = """
+    SELECT rsi_window, roc_window, bb_window
+    FROM config_transform
+    WHERE is_active = TRUE
+    ORDER BY id DESC
+    LIMIT 1
+    """
+    with config_db.conn.cursor() as cursor:
+        cursor.execute(query)
+        row = cursor.fetchone()
+        if not row:
+            raise ValueError("Không tìm thấy cấu hình transform nào active")
+        return row
+
+
 def run_transform_procedure(
-    staging_db: StagingDatabase, log_db: LogDatabase, email_service: EmailService
+    staging_db: StagingDatabase,
+    config_db: ConfigTransformDatabase,
+    log_db: LogDatabase,
+    email_service: EmailService,
 ):
     """Chạy procedure transform nếu LOAD_STAGING thành công"""
+    rsi_window, roc_window, bb_window = get_transform_config(config_db)
     try:
         latest_load_log = log_db.get_latest_log("LOAD_STAGING", None)
         if not latest_load_log or latest_load_log.get("status") != "SUCCESS":
@@ -67,7 +88,6 @@ def run_transform_procedure(
             message="Bắt đầu chạy procedure transform.",
         )
 
-        # Chạy procedure
         with staging_db.conn.cursor() as cursor:
             log_message(
                 log_db,
@@ -76,7 +96,10 @@ def run_transform_procedure(
                 "PROCESSING",
                 message="Đang chạy sp_transform_market_prices()...",
             )
-            cursor.execute("CALL sp_transform_market_prices();")
+            cursor.execute(
+                "CALL sp_transform_market_prices(%s, %s, %s);",
+                (rsi_window, roc_window, bb_window),
+            )
             staging_db.conn.commit()
 
         log_message(
@@ -105,7 +128,7 @@ def main():
     config_db, staging_db, log_db, email_service = init_services()
 
     try:
-        run_transform_procedure(staging_db, log_db, email_service)
+        run_transform_procedure(staging_db, config_db, log_db, email_service)
     finally:
         config_db.close()
         staging_db.close()
