@@ -29,7 +29,7 @@
       "name": "Debug Load Data Warehouse Module",
       "type": "debugpy",
       "request": "launch",
-      "module": "load_warehouse_module.load_warehouse",
+      "module": "load_warehouse_module.load_warehouse_module",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}"
     }

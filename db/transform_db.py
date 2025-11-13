@@ -9,7 +9,6 @@ class TransformDatabase(BaseDatabase):
 
     def __init__(self, host, dbname, user, password, port=5432):
         super().__init__(host, dbname, user, password, port)
-        # Tạo thêm SQLAlchemy engine cho Pandas
         self.engine = create_engine(
             f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}"
         )
