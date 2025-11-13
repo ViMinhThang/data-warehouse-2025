@@ -179,7 +179,7 @@ BEGIN
     );
 
     EXECUTE format(
-        'COPY tmp_dim_stock(id, ticker) FROM %L DELIMITER '','' CSV HEADER;',
+        '\copy tmp_dim_stock(id, ticker) FROM %L DELIMITER '','' CSV HEADER;',
         dim_path
     );
 
@@ -214,7 +214,7 @@ RAISE NOTICE 'Dim_stock: % bản ghi mới insert', inserted_dim;
     );
 
     EXECUTE format(
-        'COPY tmp_fact_stock(
+        '\copy tmp_fact_stock(
             record_sk, stock_sk, datetime_utc, close, volume, diff,
             percent_change_close, rsi, roc, bb_upper, bb_lower, created_at
         ) FROM %L DELIMITER '','' CSV HEADER;',
