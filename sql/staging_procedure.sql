@@ -18,38 +18,27 @@ BEGIN
          LIMIT 1'
     ) AS t(rsi_window INT, roc_window INT, bb_window INT);
 
-    -- Insert dim_stock
+    -- Cập nhật dim_stock
     INSERT INTO dim_stock (ticker)
     SELECT DISTINCT ticker
     FROM stg_market_prices
     ON CONFLICT (ticker) DO NOTHING;
 
-    -- Insert dim_datetime
-    INSERT INTO dim_datetime (date, year, month, day, hour, weekday)
-    SELECT DISTINCT
-        date_trunc('hour', datetime_utc) AS date,
-        EXTRACT(YEAR FROM datetime_utc)::INT AS year,
-        EXTRACT(MONTH FROM datetime_utc)::INT AS month,
-        EXTRACT(DAY FROM datetime_utc)::INT AS day,
-        EXTRACT(HOUR FROM datetime_utc)::INT AS hour,
-        TO_CHAR(datetime_utc, 'Day') AS weekday
-    FROM stg_market_prices
-    ON CONFLICT (date) DO NOTHING;
-
-    -- Tính các indicator và insert vào fact_stock_indicators
+    -- CTE: join stock, tính toán ROC, RSI, BB
     WITH sp AS (
-        SELECT s.*, ds.stock_id, dd.datetime_id
+        SELECT s.*,
+               ds.stock_sk
         FROM stg_market_prices s
         JOIN dim_stock ds ON ds.ticker = s.ticker
-        JOIN dim_datetime dd ON dd.date = date_trunc('hour', s.datetime_utc)
     ),
     roc_calc AS (
         SELECT *, LAG(close, v_roc_window) OVER (PARTITION BY ticker ORDER BY datetime_utc) AS close_n
         FROM sp
     ),
     bb_calc AS (
-        SELECT *, AVG(close) OVER (PARTITION BY ticker ORDER BY datetime_utc ROWS BETWEEN v_bb_window-1 PRECEDING AND CURRENT ROW) AS ma,
-                 STDDEV(close) OVER (PARTITION BY ticker ORDER BY datetime_utc ROWS BETWEEN v_bb_window-1 PRECEDING AND CURRENT ROW) AS std
+        SELECT *,
+               AVG(close) OVER (PARTITION BY ticker ORDER BY datetime_utc ROWS BETWEEN v_bb_window-1 PRECEDING AND CURRENT ROW) AS ma,
+               STDDEV(close) OVER (PARTITION BY ticker ORDER BY datetime_utc ROWS BETWEEN v_bb_window-1 PRECEDING AND CURRENT ROW) AS std
         FROM roc_calc
     ),
     rsi_calc AS (
@@ -73,19 +62,23 @@ BEGIN
         FROM rsi_calc
     )
     INSERT INTO fact_stock_indicators (
-        stock_id, datetime_id, close, volume, diff, percent_change_close,
-        rsi, roc, bb_upper, bb_lower, created_at
+        stock_sk, close, volume, diff, percent_change_close,
+        rsi, roc, bb_upper, bb_lower, created_at, datetime_utc
     )
-    SELECT stock_id, datetime_id, close, volume::BIGINT, diff, percent_change_close,
-           rsi, roc, bb_upper, bb_lower, CURRENT_TIMESTAMP
+    SELECT stock_sk, close, volume::BIGINT, diff, percent_change_close,
+           rsi, roc, bb_upper, bb_lower, CURRENT_TIMESTAMP, datetime_utc
     FROM final_calc
     WHERE close IS NOT NULL AND volume IS NOT NULL
           AND rsi IS NOT NULL AND roc IS NOT NULL
           AND bb_upper IS NOT NULL AND bb_lower IS NOT NULL;
 
-    -- Truncate stg_market_prices sau khi transform
+    -- Xuất CSV dim_stock và fact_stock_indicators
+    EXECUTE 'COPY dim_stock TO ''C:\\PostgresExports\\dim_stock.csv'' WITH CSV HEADER';
+    EXECUTE 'COPY fact_stock_indicators TO ''C:\\PostgresExports\\fact_stock_indicators.csv'' WITH CSV HEADER';
+
+    -- Xóa dữ liệu staging
     TRUNCATE TABLE stg_market_prices;
 
-    RAISE NOTICE 'Transform thành công, stg_market_prices đã truncate.';
+    RAISE NOTICE 'Transform thành công, stg_market_prices đã truncate và CSV dim_stock + fact đã xuất tại C:\Users\huynh\OneDrive\Desktop\warehousetest';
 END;
 $$;

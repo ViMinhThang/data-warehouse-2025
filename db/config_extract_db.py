@@ -17,7 +17,7 @@ class ConfigExtractDatabase(BaseDatabase):
         WHERE is_active = true;
         """
         configs = self.execute_query(query)
-        logging.info(f"📄 Fetched {len(configs)} active config_extract records.")
+        logging.info(f"Fetched {len(configs)} active config_extract records.")
         return configs
 
     def get_today_config(self, config_id: int) -> bool:

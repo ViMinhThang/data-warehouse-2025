@@ -59,7 +59,6 @@ class StagingDatabase(BaseDatabase):
             return
 
         try:
-            # Xây dựng query động
             columns = records[0].keys()
             col_names = ", ".join(columns)
             values_template = ", ".join(["%s"] * len(columns))

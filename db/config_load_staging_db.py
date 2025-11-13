@@ -19,24 +19,5 @@ class ConfigLoadStagingDatabase(BaseDatabase):
         WHERE is_active = true;
         """
         configs = self.execute_query(query)
-        logging.info(f"📄 Fetched {len(configs)} active config_load_staging records.")
+        logging.info(f"Fetched {len(configs)} active config_load_staging records.")
         return configs
-
-    def get_today_config(self, config_id: int) -> bool:
-
-        return any(
-            log["config_id"] == config_id and log["date"] == datetime.now().date()
-            for log in self._in_memory_logs
-        )
-
-    def create_today_config(self, config_id: int):
-        self._in_memory_logs.append(
-            {
-                "config_id": config_id,
-                "date": datetime.now().date(),
-                "status": "READY_LOAD",
-            }
-        )
-        logging.info(
-            f"Marked config_load_staging ID {config_id} as READY_LOAD for today."
-        )

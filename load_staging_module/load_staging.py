@@ -1,46 +1,9 @@
 import os
 from dotenv import load_dotenv
-from db.config_load_staging_db import ConfigLoadStagingDatabase
-from db.staging_db import StagingDatabase
-from db.log_db import LogDatabase
-from email_service.email_service import EmailService
+
+from utils.service_util import init_services
 from utils.file_util import get_latest_csv_file, read_csv_file
 from utils.logger_util import log_message
-
-
-def init_services():
-    """Khởi tạo database, logger, email service."""
-    load_dotenv()
-
-    # DB config
-    db_params_config = {
-        "host": os.getenv("DB_HOST"),
-        "dbname": os.getenv("DB_NAME_CONFIG", "config"),
-        "user": os.getenv("DB_USER"),
-        "password": os.getenv("DB_PASSWORD"),
-        "port": int(os.getenv("DB_PORT", 5432)),
-    }
-
-    # DB staging
-    db_params_staging = {
-        "host": os.getenv("DB_HOST"),
-        "dbname": os.getenv("DB_NAME_STAGING", "staging"),
-        "user": os.getenv("DB_USER"),
-        "password": os.getenv("DB_PASSWORD"),
-        "port": int(os.getenv("DB_PORT", 5432)),
-    }
-
-    config_db = ConfigLoadStagingDatabase(**db_params_config)
-    staging_db = StagingDatabase(**db_params_staging)
-    log_db = LogDatabase(**db_params_config)
-    email_service = EmailService(
-        username=os.getenv("EMAIL_USERNAME"),
-        password=os.getenv("EMAIL_PASSWORD"),
-        simulate=os.getenv("EMAIL_SIMULATE", "True").lower() == "true",
-    )
-
-    print("Đã khởi tạo thành công các service.")
-    return config_db, staging_db, log_db, email_service
 
 
 def load_csv_to_staging(config, staging_db, log_db):
@@ -105,7 +68,11 @@ def load_csv_to_staging(config, staging_db, log_db):
 
 def main():
     print("=== Bắt đầu quá trình LOAD STAGING ===")
-    config_db, staging_db, log_db, email_service = init_services()
+    services = init_services(['config_load_staging_db', 'staging_db', 'log_db', 'email_service'])
+    config_db = services['config_load_staging_db']
+    staging_db = services['staging_db']
+    log_db = services['log_db']
+    email_service = services['email_service']
 
     try:
         latest_extract_log = log_db.get_latest_log("EXTRACT", None)
