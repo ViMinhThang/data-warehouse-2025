@@ -6,7 +6,7 @@
 -- 1. Daily Stock Summary
 -- ===========================
 DROP MATERIALIZED VIEW IF EXISTS agg_daily_stock_summary;
-
+DROP INDEX IF EXISTS idx_agg_top_volatility;
 CREATE MATERIALIZED VIEW agg_daily_stock_summary AS
 SELECT
     fs.stock_sk,
@@ -68,7 +68,7 @@ ORDER BY avg_volatility DESC
 WITH DATA;
 
 -- Không thể tạo UNIQUE INDEX trên (avg_volatility DESC), nên bỏ DESC
-CREATE INDEX idx_agg_top_volatility ON agg_top_volatile_stocks(avg_volatility);
+CREATE UNIQUE INDEX idx_agg_top_vol_stock_sk ON agg_top_volatile_stocks(stock_sk);
 
 -- ===========================
 -- 4. Volume by Date
