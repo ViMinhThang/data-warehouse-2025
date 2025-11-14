@@ -1,5 +1,3 @@
-\c dw;
-
 -- ============================================
 -- AGGREGATE MATERIALIZED VIEWS FOR STOCK DW
 -- ============================================
@@ -27,8 +25,6 @@ GROUP BY fs.stock_sk, ds.ticker, d.full_date
 ORDER BY d.full_date, ds.ticker
 WITH DATA;
 
-
--- Index cho Daily Stock Summary
 CREATE UNIQUE INDEX idx_agg_daily_ticker_date ON agg_daily_stock_summary(ticker, full_date);
 
 -- ===========================
@@ -36,7 +32,7 @@ CREATE UNIQUE INDEX idx_agg_daily_ticker_date ON agg_daily_stock_summary(ticker,
 -- ===========================
 DROP MATERIALIZED VIEW IF EXISTS agg_monthly_stock_summary;
 
-CREATE MATERIALIZED VIEW agg_monthly_stock_summary
+CREATE MATERIALIZED VIEW agg_monthly_stock_summary AS
 SELECT
     fs.stock_sk,
     ds.ticker,
@@ -50,17 +46,17 @@ FROM fact_stock_indicators fs
 JOIN dim_stock ds ON ds.stock_sk = fs.stock_sk
 JOIN dim_date d ON d.date_sk = fs.date_sk
 GROUP BY fs.stock_sk, ds.ticker, d.year, d.month
-ORDER BY d.year, d.month, ds.ticker;
+ORDER BY d.year, d.month, ds.ticker
 WITH DATA;
--- Index cho Monthly Stock Summary
-CREATE UNIQUE  INDEX idx_agg_monthly_ticker_month ON agg_monthly_stock_summary(ticker, year, month);
+
+CREATE UNIQUE INDEX idx_agg_monthly_ticker_month ON agg_monthly_stock_summary(ticker, year, month);
 
 -- ===========================
 -- 3. Top Volatile Stocks
 -- ===========================
 DROP MATERIALIZED VIEW IF EXISTS agg_top_volatile_stocks;
 
-CREATE MATERIALIZED VIEW agg_top_volatile_stocks
+CREATE MATERIALIZED VIEW agg_top_volatile_stocks AS
 SELECT
     fs.stock_sk,
     ds.ticker,
@@ -68,17 +64,18 @@ SELECT
 FROM fact_stock_indicators fs
 JOIN dim_stock ds ON ds.stock_sk = fs.stock_sk
 GROUP BY fs.stock_sk, ds.ticker
-ORDER BY avg_volatility DESC;
+ORDER BY avg_volatility DESC
 WITH DATA;
 
-CREATE UNIQUE INDEX idx_agg_top_volatility ON agg_top_volatile_stocks(avg_volatility DESC);
+-- Không thể tạo UNIQUE INDEX trên (avg_volatility DESC), nên bỏ DESC
+CREATE INDEX idx_agg_top_volatility ON agg_top_volatile_stocks(avg_volatility);
 
 -- ===========================
 -- 4. Volume by Date
 -- ===========================
 DROP MATERIALIZED VIEW IF EXISTS agg_volume_by_date;
 
-CREATE MATERIALIZED VIEW agg_volume_by_date
+CREATE MATERIALIZED VIEW agg_volume_by_date AS
 SELECT
     d.full_date,
     SUM(fs.volume) AS total_volume,
@@ -86,7 +83,7 @@ SELECT
 FROM fact_stock_indicators fs
 JOIN dim_date d ON d.date_sk = fs.date_sk
 GROUP BY d.full_date
-ORDER BY d.full_date;
+ORDER BY d.full_date
 WITH DATA;
 
 CREATE UNIQUE INDEX idx_agg_volume_date ON agg_volume_by_date(full_date);
@@ -96,7 +93,7 @@ CREATE UNIQUE INDEX idx_agg_volume_date ON agg_volume_by_date(full_date);
 -- ===========================
 DROP MATERIALIZED VIEW IF EXISTS agg_stock_performance;
 
-CREATE MATERIALIZED VIEW agg_stock_performance
+CREATE MATERIALIZED VIEW agg_stock_performance AS
 SELECT
     fs.stock_sk,
     ds.ticker,
@@ -108,7 +105,7 @@ SELECT
 FROM fact_stock_indicators fs
 JOIN dim_stock ds ON ds.stock_sk = fs.stock_sk
 GROUP BY fs.stock_sk, ds.ticker
-ORDER BY price_change DESC;
+ORDER BY price_change DESC
 WITH DATA;
 
 CREATE UNIQUE INDEX idx_agg_stock_perf ON agg_stock_performance(stock_sk, ticker);
