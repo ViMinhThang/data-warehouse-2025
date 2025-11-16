@@ -7,27 +7,14 @@ from utils.logger_util import log_message
 load_dotenv()
 
 # =====================================================
-#  HÀM LOAD DW → DATA MART
+#  HÀM 1 — LOAD fact_price_daily (DW → DM)
 # =====================================================
-def load_dw_to_dm(config, dw_db, dm_db, log_db):
-    """
-    Load dữ liệu từ Data Warehouse sang Data Mart fact_price_daily.
-    config: dict chứa thông tin cấu hình (table, điều kiện, v.v.)
-    dw_db: service kết nối DW
-    dm_db: service kết nối Data Mart
-    log_db: service log
-    """
+def load_fact_price_daily(config, dw_db, dm_db, log_db):
     config_id = config["id"]
     try:
-        log_message(
-            log_db,
-            "LOAD_DM",
-            config_id,
-            "PROCESSING",
-            message="Bắt đầu load dữ liệu từ DW sang Data Mart...",
-        )
+        log_message(log_db, "LOAD_DM", config_id, "PROCESSING",
+                    message="Bắt đầu load fact_price_daily...")
 
-        # 1. Lấy dữ liệu từ fact_stock_indicators
         query = """
             SELECT 
                 f.stock_sk,
@@ -49,20 +36,70 @@ def load_dw_to_dm(config, dw_db, dm_db, log_db):
             FROM fact_stock_indicators f
             WHERE f.close IS NOT NULL AND f.volume IS NOT NULL
         """
+
         df = dw_db.read_sql(query)
-
         if df.empty:
-            raise ValueError("Không có dữ liệu từ DW để load sang DM.")
+            raise ValueError("Không có dữ liệu DW để load sang fact_price_daily.")
 
-        # 2. Load dữ liệu vào Data Mart fact_price_daily
         dm_db.copy_from_dataframe(df, "fact_price_daily")
+
+        log_message(log_db, "LOAD_DM", config_id, "SUCCESS",
+                    f"Load thành công {len(df)} bản ghi vào fact_price_daily.")
+        return True
+
+    except Exception as e:
+        log_message(log_db, "LOAD_DM", config_id, "FAILURE",
+                    f"Lỗi load_fact_price_daily(): {e}")
+        raise
+
+# =====================================================
+#  HÀM 2 — LOAD/REFRESH dm_monthly_stock_summary
+# =====================================================
+def load_dm_monthly_stock_summary(config, dw_db, dm_db, log_db):
+    config_id = config["id"]
+
+    try:
+        log_message(log_db, "LOAD_DM", config_id, "PROCESSING",
+                    message="Refresh dm_monthly_stock_summary...")
+
+        # Gọi procedure SQL mà bạn đã tạo:
+        dm_db.execute("CALL sp_refresh_dm_monthly_stock_summary();")
+
+        log_message(log_db, "LOAD_DM", config_id, "SUCCESS",
+                    "Refresh dm_monthly_stock_summary thành công.")
+
+        return True
+
+    except Exception as e:
+        log_message(log_db, "LOAD_DM", config_id, "FAILURE",
+                    f"Lỗi load_dm_monthly_stock_summary(): {e}")
+        raise
+
+# =====================================================
+#  HÀM 3 — LOAD/REFRESH dm_daily_volatility
+# =====================================================
+def load_dm_daily_volatility(dm_db, log_db, config_id=None):
+    """
+    Load dữ liệu từ DW sang Data Mart dm_daily_volatility
+    bằng Stored Procedure sp_refresh_dm_daily_volatility().
+    """
+    try:
+        log_message(
+            log_db,
+            "LOAD_DM",
+            config_id,
+            "PROCESSING",
+            message="Bắt đầu load dữ liệu dm_daily_volatility..."
+        )
+
+        dm_db.execute("CALL sp_refresh_dm_daily_volatility();")
 
         log_message(
             log_db,
             "LOAD_DM",
             config_id,
             "SUCCESS",
-            message=f"Load thành công {len(df)} bản ghi vào fact_price_daily.",
+            message="Load dm_daily_volatility thành công."
         )
         return True
 
@@ -72,16 +109,16 @@ def load_dw_to_dm(config, dw_db, dm_db, log_db):
             "LOAD_DM",
             config_id,
             "FAILURE",
-            message=f"Lỗi trong load_dw_to_dm(): {e}",
+            message=f"Lỗi trong load_dm_daily_volatility(): {e}"
         )
         raise
 
-
 # =====================================================
-#  QUY TRÌNH CHÍNH
+#  MAIN ETL
 # =====================================================
 def main():
-    print("=== Bắt đầu quá trình LOAD DW → DATA MART ===")
+    print("=== Bắt đầu LOAD DATA MART ===")
+
     services = init_services(['config_load_dm_db', 'dw_db', 'dm_db', 'log_db', 'email_service'])
     config_db = services['config_load_dm_db']
     dw_db = services['dw_db']
@@ -92,24 +129,15 @@ def main():
     try:
         configs = config_db.get_active_configs()
         if not configs:
-            log_message(
-                log_db,
-                "LOAD_DM",
-                None,
-                "WARNING",
-                message="Không có config load DM active.",
-            )
+            log_message(log_db, "LOAD_DM", None, "WARNING", "Không có config DM active.")
             return
 
         for config in configs:
             config_id = config["id"]
-            log_message(
-                log_db,
-                "LOAD_DM",
-                config_id,
-                "READY",
-                message="Bắt đầu xử lý config load DM.",
-            )
+            dm_type = config.get("dm_type")   # ví dụ: FACT_PRICE_DAILY, MONTHLY_SUMMARY, DAILY_VOLATILITY
+
+            log_message(log_db, "LOAD_DM", config_id, "READY",
+                        f"Bắt đầu xử lý cấu hình DM loại: {dm_type}")
 
             load_success = False
             retry_count = 0
@@ -117,48 +145,39 @@ def main():
 
             while not load_success and retry_count < max_retries:
                 try:
-                    load_dw_to_dm(config, dw_db, dm_db, log_db)
+                    # So sánh loại DM để chạy đúng hàm load
+                    if dm_type == "FACT_PRICE_DAILY":
+                        load_fact_price_daily(config, dw_db, dm_db, log_db)
+
+                    elif dm_type == "MONTHLY_SUMMARY":
+                        load_dm_monthly_stock_summary(config, dw_db, dm_db, log_db)
+
+                    elif dm_type == "DAILY_VOLATILITY":
+                        load_dm_daily_volatility(dm_db, log_db, config_id)
+
+                    else:
+                        raise ValueError(f"dm_type không hợp lệ: {dm_type}")
+
                     load_success = True
+
                 except Exception as e:
                     retry_count += 1
-                    log_message(
-                        log_db,
-                        "LOAD_DM",
-                        config_id,
-                        "FAILURE",
-                        message=f"Lỗi lần {retry_count}: {e}",
-                    )
+
+                    log_message(log_db, "LOAD_DM", config_id, "FAILURE",
+                                f"Lỗi lần {retry_count}: {e}")
+
                     email_service.send_email(
                         to_addrs=[os.getenv("EMAIL_ADMIN", "admin@example.com")],
-                        subject=f"[ETL] Lỗi Load DM (config ID={config_id})",
-                        body=f"Lỗi khi load dữ liệu từ DW sang DM:\n\n{e}",
+                        subject=f"[ETL] Lỗi Load DM ({dm_type})",
+                        body=f"Lỗi khi load DM:\n\n{e}"
                     )
-
-            if not load_success:
-                log_message(
-                    log_db,
-                    "LOAD_DM",
-                    config_id,
-                    "FAILURE",
-                    message=f"Load DM thất bại sau {max_retries} lần retry.",
-                )
-
-    except Exception as e:
-        log_message(
-            log_db,
-            "LOAD_DM",
-            None,
-            "FAILURE",
-            message=f"Lỗi tổng thể trong main(): {e}",
-        )
 
     finally:
         config_db.close()
         dw_db.close()
         dm_db.close()
         log_db.close()
-        print("Kết thúc quá trình LOAD DW → DATA MART.")
-
+        print("=== Kết thúc LOAD DATA MART ===")
 
 if __name__ == "__main__":
     main()
