@@ -60,7 +60,9 @@ def extract_ticker_data(ticker, period, interval, config_id, log_db):
     # 10.8.7.3 Kiểm tra dữ liệu trả về có rỗng không?
     if data.empty:
         # 10.8.7.4 Ném ra ValueError.
-        raise ValueError(f"Không có dữ liệu trả về cho {ticker} từ Yahoo Finance.")
+        raise ValueError(
+            f"Không có dữ liệu trả về cho ticker với mã là : {ticker} từ Yahoo Finance."
+        )
 
     # 10.8.7.5  Gọi compute_stock_indicators(data, ticker) để tính các chỉ báo kỹ thuật.
     #        Lấy cột Close và Volume tương ứng với mã cổ phiếu.  Tính Diff: mức chênh lệch giá đóng cửa so với ngày trước đó.  Tính PercentChangeClose: phần trăm thay đổi giá đóng cửa so với ngày trước đó.  Trả về một DataFrame mới chứa các chỉ số trên.
