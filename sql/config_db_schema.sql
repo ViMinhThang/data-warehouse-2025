@@ -42,7 +42,7 @@ INSERT INTO config_extract (
 )
 VALUES
     (
-        'AAPL,MSFT,GOOG',
+        '1234,1234,1234',
         '1mo',
         '5m',
         './output/yfinance',
