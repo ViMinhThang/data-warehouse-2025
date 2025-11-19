@@ -158,30 +158,22 @@ CREATE TABLE IF NOT EXISTS dm_daily_volatility (
 
 -- Tạo Materialized View
 CREATE MATERIALIZED VIEW agg_daily_volatility AS
-SELECT
+SELECT DISTINCT ON (f.stock_sk, f.date_sk)
     f.date_sk AS date_key,
     f.stock_sk,
     d.ticker,
-
-    -- daily volatility
     f.percent_change_close AS daily_volatility,
-
-    -- Std Dev 5 days
     STDDEV_SAMP(f.close) OVER (
         PARTITION BY f.stock_sk ORDER BY f.date_sk ROWS BETWEEN 4 PRECEDING AND CURRENT ROW
     ) AS stddev_5d,
-
-    -- Std Dev 20 days
     STDDEV_SAMP(f.close) OVER (
         PARTITION BY f.stock_sk ORDER BY f.date_sk ROWS BETWEEN 19 PRECEDING AND CURRENT ROW
     ) AS stddev_20d
-
 FROM fact_stock_indicators f
 JOIN dim_stock d ON d.stock_sk = f.stock_sk
-ORDER BY f.date_sk, f.stock_sk
+ORDER BY f.stock_sk, f.date_sk, f.record_sk DESC
 WITH DATA;
 
--- Index này bây giờ sẽ chạy an toàn vì dữ liệu nguồn đã được clean ở bước 1
 CREATE UNIQUE INDEX IF NOT EXISTS idx_agg_daily_volatility
 ON agg_daily_volatility(stock_sk, date_key);
 
