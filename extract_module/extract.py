@@ -224,10 +224,13 @@ def process_config(config, log_db, email_service):
                 "FAILURE",
                 message=f"Lỗi lần {retry_count}/{max_retries}: {e}",
             )
+            emails = config.get("emails")
+            if not emails:
+                emails = []
             email_service.send_email(
-                to_addrs=[os.getenv("EMAIL_ADMIN", "admin@example.com")],
-                subject=f"[ETL Extract] Lỗi Config ID={config_id}",
-                body=f"Lỗi khi crawl dữ liệu:\n\n{e}",
+                to_addrs=emails,
+                subject=f"[ETL Extract] Lỗi Config ID={config.get('id')}",
+                body=f"Lỗi tổng thể trong process_config:\n\n{e}",
             )
     """10.11 Kết thúc vòng while"""
     """10.12 Kiểm tra craw_success."""
@@ -312,8 +315,11 @@ def main():
                     "FAILURE",
                     message=f"Lỗi xử lý config ID={config.get('id')}: {e}",
                 )
+                emails = config.get("emails")
+                if not emails:
+                    emails = []
                 email_service.send_email(
-                    to_addrs=[os.getenv("EMAIL_ADMIN", "admin@example.com")],
+                    to_addrs=emails,
                     subject=f"[ETL Extract] Lỗi Config ID={config.get('id')}",
                     body=f"Lỗi tổng thể trong process_config:\n\n{e}",
                 )

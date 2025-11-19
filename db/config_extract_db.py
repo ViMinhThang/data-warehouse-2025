@@ -12,7 +12,7 @@ class ConfigExtractDatabase(BaseDatabase):
 
     def get_active_configs(self) -> List[Dict[str, Any]]:
         query = """
-        SELECT id, tickers, is_active, output_path, period, interval, retry_count
+        SELECT id, tickers, is_active, output_path,emails, period, interval, retry_count
         FROM config_extract
         WHERE is_active = true;
         """

@@ -13,46 +13,71 @@ DROP TABLE IF EXISTS config_transform_staging CASCADE;
 DROP TABLE IF EXISTS config_load_datawarehouse CASCADE;
 
 -- Etract
-CREATE TABLE
-    config_extract (
-        id SERIAL PRIMARY KEY,
-        tickers TEXT NOT NULL,
-        period VARCHAR(50) NOT NULL,
-        interval VARCHAR(50) NOT NULL,
-        output_path VARCHAR(255) NOT NULL,
-        retry_count INT DEFAULT 0,
-        is_active BOOLEAN DEFAULT TRUE,
-        note VARCHAR(255),
-        create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        created_by VARCHAR(100),
-        updated_by VARCHAR(100)
-    );
-
-INSERT INTO
-    config_extract (
-        tickers,
-        period,
-        interval,
-        output_path,
-        retry_count,
-        is_active,
-        note,
-        created_by,
-        updated_by
-    )
+CREATE TABLE config_extract (
+    id SERIAL PRIMARY KEY,
+    tickers TEXT NOT NULL,
+    period VARCHAR(50) NOT NULL,
+    interval VARCHAR(50) NOT NULL,
+    output_path VARCHAR(255) NOT NULL,
+    emails TEXT[],
+    retry_count INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    note VARCHAR(255),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_by VARCHAR(100)
+);
+INSERT INTO config_extract (
+    tickers,
+    period,
+    interval,
+    output_path,
+    emails, -- Thêm cột này
+    retry_count,
+    is_active,
+    note,
+    created_by,
+    updated_by
+)
 VALUES
     (
         'AAPL,MSFT,GOOG',
         '1mo',
         '5m',
         './output/yfinance',
+        ARRAY['22130251@st.hcmuaf.edu.vn','huynhminhthang246@gmail.com'],
         3,
         TRUE,
         'Crawl dữ liệu cổ phiếu Mỹ hàng ngày',
         'admin',
         'admin'
     );
+-- INSERT INTO config_extract (
+--     tickers,
+--     period,
+--     interval,
+--     output_path,
+--     emails, -- Thêm cột này
+--     retry_count,
+--     is_active,
+--     note,
+--     created_by,
+--     updated_by
+-- )
+-- VALUES
+--     (
+--         'AAPL,MSFT,GOOG',
+--         '1mo',
+--         '5m',
+--         './output/yfinance',
+--         ARRAY['22130307@st.hcmuaf.edu.vn', '22130321@st.hcmuaf.edu.vn','22130069@st.hcmuaf.edu.vn','22130251@st.hcmuaf.edu.vn'],
+--         3,
+--         TRUE,
+--         'Crawl dữ liệu cổ phiếu Mỹ hàng ngày',
+--         'admin',
+--         'admin'
+--     );
 
 CREATE TABLE
     config_transform (
