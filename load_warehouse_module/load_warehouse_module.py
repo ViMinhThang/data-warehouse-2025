@@ -101,8 +101,8 @@ def process_dw_load(config, log_db, dw_db, email_service):
 
             # Gọi procedure trong cùng session
             conn.execute(text(f"CALL {procedure_name}()"))
-            
-            # Refresh tất cả aggregates ngay sau khi load 
+
+            # Refresh tất cả aggregates ngay sau khi load
             conn.execute(text("CALL sp_refresh_all_aggregates()"))
 
         log_message(

@@ -5,7 +5,7 @@ DROP TABLE IF EXISTS config_load_staging CASCADE;
 DROP TABLE IF EXISTS config_extract CASCADE;
 
 DROP TABLE IF EXISTS config_transform CASCADE;
-
+DROP TABLE IF EXISTS config_load_datamart;
 DROP TABLE IF EXISTS config_load_dw CASCADE;
 
 DROP TABLE IF EXISTS config_transform_staging CASCADE;
@@ -216,3 +216,26 @@ VALUES
         'admin',
         'admin'
     );
+CREATE TABLE config_load_datamart (
+    id SERIAL PRIMARY KEY,
+    procedure_name VARCHAR(100) NOT NULL,
+    description VARCHAR(255),
+    execution_order INT NOT NULL,
+    is_critical BOOLEAN DEFAULT FALSE,
+    retry_count INT DEFAULT 3,
+    is_active BOOLEAN DEFAULT TRUE,
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100) DEFAULT 'admin',
+    updated_by VARCHAR(100) DEFAULT 'admin'
+);
+
+INSERT INTO config_load_datamart 
+    (procedure_name, description, execution_order, is_critical, retry_count, is_active)
+VALUES 
+    ('etl_load_fact_price_daily', '1. Load Fact Price Daily (Gốc)', 1, TRUE, 3, TRUE),
+    
+    ('sp_refresh_dm_monthly_stock_summary', '2. Refresh Monthly Summary', 2, FALSE, 3, TRUE),
+    
+    ('sp_refresh_dm_daily_volatility', '3. Refresh Daily Volatility', 3, FALSE, 3, TRUE);
