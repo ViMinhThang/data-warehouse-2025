@@ -132,7 +132,7 @@ def main():
                         log_db,
                         "LOAD_DM",
                         step_config["id"],
-                        "STOPPED",
+                        "FAILURE",
                         f"Dừng pipeline vì bước CRITICAL '{step_desc}' thất bại.",
                     )
                     break
@@ -141,7 +141,7 @@ def main():
                         log_db,
                         "LOAD_DM",
                         step_config["id"],
-                        "WARNING",
+                        "INFO",
                         f"Bỏ qua bước '{step_desc}' và tiếp tục bước sau (Non-Critical).",
                     )
 

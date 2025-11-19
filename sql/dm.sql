@@ -8,7 +8,7 @@ DROP MATERIALIZED VIEW IF EXISTS agg_monthly_stock_summary CASCADE;
 DROP TABLE IF EXISTS fact_price_daily CASCADE;
 DROP TABLE IF EXISTS dm_daily_volatility CASCADE;
 DROP TABLE IF EXISTS dm_monthly_stock_summary CASCADE;
-
+DROP INDEX IF EXISTS idx_agg_daily_volatility;
 -- ===================================
 -- 2. FACT: PRICE DAILY (Data Mart)
 -- ===================================
