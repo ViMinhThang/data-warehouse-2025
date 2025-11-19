@@ -1,17 +1,3 @@
--- ===================================
--- 1. CLEANUP & PREPARE DATA
--- ===================================
--- Xóa dữ liệu trùng lặp trong bảng Fact nguồn để tránh lỗi Unique Index (Giữ lại bản ghi mới nhất)
-DELETE FROM fact_stock_indicators
-WHERE record_sk IN (
-    SELECT record_sk
-    FROM (
-        SELECT record_sk,
-        ROW_NUMBER() OVER (PARTITION BY stock_sk, date_sk ORDER BY record_sk DESC) as rn
-        FROM fact_stock_indicators
-    ) t
-    WHERE t.rn > 1
-);
 
 -- Drop các object cũ
 DROP PROCEDURE IF EXISTS etl_load_fact_price_daily;

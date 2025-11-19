@@ -20,3 +20,7 @@ echo "$(date) - End transform" >> /home/fragile/data-warehouse-2025/transform.lo
 echo "$(date) - Start load_warehouse" >> /home/fragile/data-warehouse-2025/load_warehouse.log
 python -m   load_warehouse_module.load_warehouse_module
 echo "$(date) - End load_warehouse_module" >> /home/fragile/data-warehouse-2025/load_warehouse_module.log
+
+echo "$(date) - Start load_data_mart" >> /home/fragile/data-warehouse-2025/load_data_mart.log
+python -m   load_data_mart_module.load_data_mart_module
+echo "$(date) - End load_data_mart" >> /home/fragile/data-warehouse-2025/load_data_mart.log

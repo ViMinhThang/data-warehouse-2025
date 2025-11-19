@@ -172,7 +172,7 @@ CREATE TABLE
     log (
         id SERIAL PRIMARY KEY,
         stage VARCHAR(100) CHECK (
-            stage IN ('EXTRACT', 'TRANSFORM', 'LOAD_DW', 'LOAD_STAGING')
+            stage IN ('EXTRACT', 'TRANSFORM', 'LOAD_DW', 'LOAD_STAGING','LOAD_DM')
         ) NOT NULL,
         config_id INT,
         status VARCHAR(255) CHECK (
