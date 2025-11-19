@@ -8,10 +8,15 @@ from db.dw_db import DWDatabase
 from db.log_db import LogDatabase
 from email_service.email_service import EmailService
 from utils.logger_util import log_message
-
+# 1. import các thư viện cần thiết: os, dotenv, pandas, sqlalchemy.text 
+# và đọc biến môi trường load_dotenv()
 load_dotenv()
 
-
+# 2. Khởi tạo các services: init_services()
+# - ConfigDWDatabase: lưu cấu hình
+# - DWDatabase: connection tới Data Warehouse 
+# - LogDatabase: ghi log trạng thái 
+# - EmailService: gửi alert khi có lỗi
 def init_services():
     """Khởi tạo DB và Email service"""
     db_params_config = {
@@ -42,13 +47,14 @@ def init_services():
     print("Đã khởi tạo thành công các service DW.")
     return config_db, dw_db, log_db, email_service
 
-
-def process_dw_load(config, log_db, dw_db, email_service):
+def process_dw_load(config, log_db, dw_db, email_service):  
+    # 3.1. Lấy thông tin config: id / dim_path / fact_path / procedure_name
     config_id = config["id"]
     dim_path = config["dim_path"]
     fact_path = config["fact_path"]
     procedure_name = config.get("procedure", "sp_load_stock_files_from_tmp")
 
+    # 3.2. Ghi log: bắt đầu (READY)
     log_message(
         log_db,
         "LOAD_DW",
@@ -62,18 +68,21 @@ def process_dw_load(config, log_db, dw_db, email_service):
         dim_df = pd.read_csv(dim_path)
         fact_df = pd.read_csv(fact_path, parse_dates=["datetime_utc"])
 
+#     3.4. Mở transaction (engine.begin()):
         with engine.begin() as conn:
-            # Tạo tmp table và load dữ liệu
+# - Tạo TEMP TABLE tmp_dim_stock (schema phải tương ứng với file CSV)
             conn.execute(text("DROP TABLE IF EXISTS tmp_dim_stock"))
             conn.execute(
                 text(
                     "CREATE TEMP TABLE tmp_dim_stock (stock_sk INT, ticker VARCHAR(20))"
                 )
             )
+# - Load dim_df vào tmp_dim_stock (to_sql hoặc COPY)
             dim_df.to_sql(
                 "tmp_dim_stock", conn, if_exists="append", index=False, method="multi"
             )
 
+# - Tạo TEMP TABLE tmp_fact_stock
             conn.execute(text("DROP TABLE IF EXISTS tmp_fact_stock"))
             conn.execute(
                 text(
@@ -95,16 +104,19 @@ def process_dw_load(config, log_db, dw_db, email_service):
             """
                 )
             )
+# - Load fact_df vào tmp_fact_stock
             fact_df.to_sql(
                 "tmp_fact_stock", conn, if_exists="append", index=False, method="multi"
             )
 
-            # Gọi procedure trong cùng session
+#             3.5. Gọi stored procedure (CALL sp_load...):
+# Procedure phải thực hiện: validate, dedupe, merge (INSERT/UPDATE vào dim/fact chính)
             conn.execute(text(f"CALL {procedure_name}()"))
 
-            # Refresh tất cả aggregates ngay sau khi load
+# 3.6. Gọi sp_refresh_all_aggregates() để cập nhật dữ liệu tổng hợp
             conn.execute(text("CALL sp_refresh_all_aggregates()"))
-
+# 3.7. Commit transaction (engine.begin() tự commit nếu không lỗi)
+# 3.8. Ghi log SUCCESS hoặc nếu lỗi -> log FAILURE + gửi email
         log_message(
             log_db,
             "LOAD_DW",
