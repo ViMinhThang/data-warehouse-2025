@@ -4,8 +4,8 @@ AS $$
 BEGIN
     RAISE NOTICE 'ETL Trend Analysis via FDW...';
 
-    -- DAILY TREND
-    CREATE TABLE IF NOT EXISTS dm.stock_daily_trend (
+    -- DAILY TREND (no schema)
+    CREATE TABLE IF NOT EXISTS stock_daily_trend (
         ticker VARCHAR(20),
         full_date DATE,
         avg_close NUMERIC,
@@ -17,9 +17,9 @@ BEGIN
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    TRUNCATE TABLE dm.stock_daily_trend;
+    TRUNCATE TABLE stock_daily_trend;
 
-    INSERT INTO dm.stock_daily_trend
+    INSERT INTO stock_daily_trend
     SELECT 
         ticker, full_date, avg_close, max_close, min_close,
         total_volume, avg_rsi, avg_roc
@@ -27,7 +27,7 @@ BEGIN
 
 
     -- MONTHLY TREND
-    CREATE TABLE IF NOT EXISTS dm.stock_monthly_trend (
+    CREATE TABLE IF NOT EXISTS stock_monthly_trend (
         ticker VARCHAR(20),
         year INT,
         month INT,
@@ -38,9 +38,9 @@ BEGIN
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    TRUNCATE TABLE dm.stock_monthly_trend;
+    TRUNCATE TABLE stock_monthly_trend;
 
-    INSERT INTO dm.stock_monthly_trend
+    INSERT INTO stock_monthly_trend
     SELECT 
         ticker, year, month,
         avg_close, total_volume,
@@ -56,7 +56,7 @@ AS $$
 BEGIN
     RAISE NOTICE 'ETL Stock Ranking via FDW...';
 
-    CREATE TABLE IF NOT EXISTS dm.stock_ranking_snapshot (
+    CREATE TABLE IF NOT EXISTS stock_ranking_snapshot (
         ticker VARCHAR(20),
         min_close NUMERIC,
         max_close NUMERIC,
@@ -68,9 +68,9 @@ BEGIN
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    TRUNCATE TABLE dm.stock_ranking_snapshot;
+    TRUNCATE TABLE stock_ranking_snapshot;
 
-    INSERT INTO dm.stock_ranking_snapshot (
+    INSERT INTO stock_ranking_snapshot (
         ticker, min_close, max_close, price_change,
         avg_rsi, avg_roc_performance, avg_volatility, risk_category
     )
@@ -100,7 +100,7 @@ AS $$
 BEGIN
     RAISE NOTICE 'ETL Market Overview via FDW...';
 
-    CREATE TABLE IF NOT EXISTS dm.market_liquidity_history (
+    CREATE TABLE IF NOT EXISTS market_liquidity_history (
         full_date DATE PRIMARY KEY,
         total_market_volume BIGINT,
         stocks_traded_count INT,
@@ -108,9 +108,9 @@ BEGIN
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    TRUNCATE TABLE dm.market_liquidity_history;
+    TRUNCATE TABLE market_liquidity_history;
 
-    INSERT INTO dm.market_liquidity_history
+    INSERT INTO market_liquidity_history
     SELECT
         full_date,
         total_volume,
