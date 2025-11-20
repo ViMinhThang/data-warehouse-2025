@@ -1,12 +1,12 @@
-import { Pool, QueryResult } from 'pg';
+import { Pool, QueryResult, QueryResultRow } from "pg";
 
 // Database connection configuration
 const pool = new Pool({
-  host: 'localhost',
+  host: "localhost",
   port: 5432,
-  database: 'dm',
-  user: 'fragile',
-  password: '123456',
+  database: "dm",
+  user: "fragile",
+  password: "123456",
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
@@ -58,18 +58,19 @@ export interface MarketLiquidity {
 }
 
 // Query helper function
-export async function query<T>(
+export async function query<T extends QueryResultRow>(
   text: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params?: any[]
 ): Promise<QueryResult<T>> {
   const start = Date.now();
   try {
     const res = await pool.query<T>(text, params);
     const duration = Date.now() - start;
-    console.log('Executed query', { text, duration, rows: res.rowCount });
+    console.log("Executed query", { text, duration, rows: res.rowCount });
     return res;
   } catch (error) {
-    console.error('Database query error:', error);
+    console.error("Database query error:", error);
     throw error;
   }
 }
