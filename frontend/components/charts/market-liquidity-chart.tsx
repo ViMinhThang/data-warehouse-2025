@@ -13,15 +13,15 @@ interface MarketLiquidityChartProps {
 const chartConfig = {
   volume: {
     label: "Total Volume",
-    color: "hsl(var(--chart-1))",
+    color: "hsl(221.2, 83.2%, 53.3%)", // Blue (Primary)
   },
   movingAvg: {
     label: "7D Moving Avg",
-    color: "hsl(var(--chart-2))",
+    color: "hsl(210, 100%, 50%)", // Pure Blue (Secondary)
   },
   stocksCount: {
     label: "Stocks Traded",
-    color: "hsl(var(--chart-3))",
+    color: "hsl(199, 89%, 48%)", // Cyan Blue (Accent)
   },
 } satisfies ChartConfig;
 
