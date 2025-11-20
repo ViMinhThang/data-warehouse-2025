@@ -171,7 +171,7 @@ BEGIN
     INSERT INTO dim_stock(ticker)
     SELECT DISTINCT t.ticker
     FROM tmp_dim_stock t
-    JOIN dim_stock d ON t.ticker = d.ticker
+    LEFT JOIN dim_stock d ON t.ticker = d.ticker
     WHERE d.ticker IS NULL;
 
     GET DIAGNOSTICS inserted_dim = ROW_COUNT;
