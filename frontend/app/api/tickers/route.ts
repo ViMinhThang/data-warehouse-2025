@@ -6,11 +6,11 @@ export async function GET() {
     // Get distinct tickers from all three tables
     const queryText = `
       SELECT DISTINCT ticker FROM (
-        SELECT ticker FROM dm_dw.stock_daily_trend
+        SELECT ticker FROM stock_daily_trend
         UNION
-        SELECT ticker FROM dm_dw.stock_monthly_trend
+        SELECT ticker FROM stock_monthly_trend
         UNION
-        SELECT ticker FROM dm_dw.stock_ranking_snapshot
+        SELECT ticker FROM stock_ranking_snapshot
       ) AS all_tickers
       ORDER BY ticker
     `;

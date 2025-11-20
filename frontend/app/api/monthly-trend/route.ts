@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const year = searchParams.get('year');
 
     // Build query based on parameters
-    let queryText = 'SELECT * FROM dm_dw.stock_monthly_trend';
+    let queryText = 'SELECT * FROM stock_monthly_trend';
     const queryParams: any[] = [];
     const conditions: string[] = [];
 

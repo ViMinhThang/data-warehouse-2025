@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('end_date');
 
     // Build query based on parameters
-    let queryText = 'SELECT * FROM dm_dw.stock_daily_trend';
+    let queryText = 'SELECT * FROM stock_daily_trend';
     const queryParams: any[] = [];
     const conditions: string[] = [];
 

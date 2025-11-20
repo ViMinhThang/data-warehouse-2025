@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const sortOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
     const queryText = `
-      SELECT * FROM dm_dw.stock_ranking_snapshot
+      SELECT * FROM stock_ranking_snapshot
       ORDER BY ${sortColumn} ${sortOrder}
       LIMIT $1
     `;
