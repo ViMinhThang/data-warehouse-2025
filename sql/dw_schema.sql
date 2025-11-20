@@ -209,7 +209,7 @@ INSERT INTO fact_stock_indicators(
     created_at
 )
 SELECT 
-    s.stock_sk,  -- Lấy stock_sk từ dim_stock
+    f.stock_sk,
     d.date_sk,
     f.close,
     f.volume,
@@ -222,10 +222,10 @@ SELECT
     f.created_at
 FROM tmp_fact_stock f
 JOIN dim_date d ON d.full_date = f.datetime_utc::DATE
-JOIN dim_stock s ON s.ticker = f.ticker  -- <-- Lấy stock_sk đúng
 LEFT JOIN fact_stock_indicators fi
-    ON fi.stock_sk = s.stock_sk AND fi.date_sk = d.date_sk
+    ON fi.stock_sk = f.stock_sk AND fi.date_sk = d.date_sk
 WHERE fi.record_sk IS NULL;
+
 
 
     GET DIAGNOSTICS inserted_fact = ROW_COUNT;
