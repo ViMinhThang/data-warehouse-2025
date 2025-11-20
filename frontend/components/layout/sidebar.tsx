@@ -1,9 +1,15 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { BarChart3, TrendingUp, Trophy, LayoutDashboard, Activity } from "lucide-react"
-import { cn } from "@/lib/utils"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  BarChart3,
+  TrendingUp,
+  Trophy,
+  LayoutDashboard,
+  Activity,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const sidebarItems = [
   {
@@ -26,10 +32,10 @@ const sidebarItems = [
     href: "/market-liquidity",
     icon: Activity,
   },
-]
+];
 
 export function Sidebar() {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   return (
     <div className="flex h-full flex-col border-r bg-card">
@@ -42,7 +48,7 @@ export function Sidebar() {
       <div className="flex-1 overflow-auto py-2">
         <nav className="grid items-start px-2 text-sm font-medium">
           {sidebarItems.map((item) => {
-            const Icon = item.icon
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
@@ -57,15 +63,15 @@ export function Sidebar() {
                 <Icon className="h-4 w-4" />
                 {item.title}
               </Link>
-            )
+            );
           })}
         </nav>
       </div>
       <div className="border-t p-4">
         <p className="text-xs text-muted-foreground text-center">
-          © 2024 Stock Analytics
+          © 2025 Stock Analytics
         </p>
       </div>
     </div>
-  )
+  );
 }
