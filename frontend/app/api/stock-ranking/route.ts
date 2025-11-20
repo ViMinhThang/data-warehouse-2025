@@ -9,31 +9,6 @@ export async function GET(request: NextRequest) {
     const order = searchParams.get('order') || 'DESC';
 
     // Validate sort column to prevent SQL injection
-    const validSortColumns = [
-      'ticker',
-      'price_change',
-      'avg_rsi',
-      'avg_roc_performance',
-      'avg_volatility',
-      'snapshot_date',
-    ];
-
-    const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'price_change';
-    const sortOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
-
-    const queryText = `
-      SELECT * FROM stock_ranking_snapshot
-      ORDER BY ${sortColumn} ${sortOrder}
-      LIMIT $1
-    `;
-
-    const result = await query<StockRanking>(queryText, [parseInt(limit)]);
-
-    return NextResponse.json({
-      success: true,
-      data: result.rows,
-      count: result.rowCount,
-    });
   } catch (error) {
     console.error('Error fetching stock ranking:', error);
     return NextResponse.json(
