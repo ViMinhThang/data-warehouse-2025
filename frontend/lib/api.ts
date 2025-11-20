@@ -27,8 +27,13 @@ export async function fetchDailyTrend(ticker?: string): Promise<DailyTrend[]> {
   const json = await res.json();
   return json.data;
 }
-export async function fetchMonthlyTrend(): Promise<MonthlyTrend[]> {
-  const res = await fetch(`${API_BASE_URL}/api/monthly-trend`, {
+export async function fetchMonthlyTrend(ticker?: string): Promise<MonthlyTrend[]> {
+  const url = new URL(`${API_BASE_URL}/api/monthly-trend`);
+  if (ticker) {
+    url.searchParams.append('ticker', ticker);
+  }
+
+  const res = await fetch(url.toString(), {
     cache: 'no-store',
   });
   
@@ -39,7 +44,6 @@ export async function fetchMonthlyTrend(): Promise<MonthlyTrend[]> {
   const json = await res.json();
   return json.data;
 }
-
 export async function fetchStockRanking(): Promise<StockRanking[]> {
   const res = await fetch(`${API_BASE_URL}/api/stock-ranking`, {
     cache: 'no-store',

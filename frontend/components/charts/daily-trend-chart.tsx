@@ -1,6 +1,6 @@
 'use client';
 
-import { CartesianGrid, Line, LineChart, XAxis, YAxis, Bar, BarChart, Area, AreaChart } from 'recharts';
+import { CartesianGrid, Line, LineChart, XAxis, YAxis, Bar, BarChart, Area, AreaChart, Brush } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { DailyTrend } from '@/lib/db';
@@ -61,7 +61,7 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-[300px] min-h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="h-[400px] min-h-[400px] w-full">
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="fillAvgClose" x1="0" y1="0" x2="0" y2="1">
@@ -87,7 +87,6 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
                 cursor={false}
                 content={<ChartTooltipContent indicator="dot" />} 
               />
-              <ChartLegend content={<ChartLegendContent />} />
               <Area
                 dataKey="avgClose"
                 type="monotone"
@@ -97,23 +96,15 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
                 strokeWidth={2}
                 activeDot={{ r: 6 }}
               />
-              <Line 
-                type="monotone" 
-                dataKey="maxClose" 
-                stroke="var(--color-maxClose)" 
-                strokeWidth={1.5}
-                strokeDasharray="5 5"
-                dot={false}
-                activeDot={false}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="minClose" 
-                stroke="var(--color-minClose)" 
-                strokeWidth={1.5}
-                strokeDasharray="5 5"
-                dot={false}
-                activeDot={false}
+              {/* ... existing Lines ... */}
+              
+              {/* ADD THIS BRUSH COMPONENT */}
+              <Brush 
+                dataKey="date" 
+                height={30} 
+                stroke="var(--color-muted-foreground)"
+                fill="var(--color-background)"
+                tickFormatter={() => ""} 
               />
             </AreaChart>
           </ChartContainer>
@@ -185,7 +176,6 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
                 cursor={false}
                 content={<ChartTooltipContent />} 
               />
-              <ChartLegend content={<ChartLegendContent />} />
               <Line 
                 type="monotone" 
                 dataKey="rsi" 

@@ -3,8 +3,20 @@ import { query, DailyTrend } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    const queryText = 'SELECT * FROM stock_daily_trend ORDER BY full_date DESC LIMIT 1000';
-    const result = await query<DailyTrend>(queryText);
+    const searchParams = request.nextUrl.searchParams;
+    const ticker = searchParams.get('ticker');
+
+    let queryText = 'SELECT * FROM stock_daily_trend';
+    const queryParams: any[] = [];
+
+    if (ticker) {
+      queryText += ' WHERE ticker = $1';
+      queryParams.push(ticker);
+    }
+
+    queryText += ' ORDER BY full_date DESC LIMIT 1000';
+
+    const result = await query<DailyTrend>(queryText, queryParams);
 
     return NextResponse.json({
       success: true,
