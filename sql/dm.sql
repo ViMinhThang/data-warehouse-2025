@@ -95,31 +95,35 @@ ON CONFLICT (ticker, snapshot_date) DO NOTHING;
 END;
 $$;
 
-CREATE
-OR REPLACE PROCEDURE sp_build_dm_market_overview () LANGUAGE plpgsql AS $$
+CREATE OR REPLACE PROCEDURE sp_build_dm_market_overview () 
+LANGUAGE plpgsql AS $$
 BEGIN
     RAISE NOTICE 'ETL Market Overview via FDW...';
 
-CREATE TABLE IF NOT EXISTS market_liquidity_history (
-    full_date DATE PRIMARY KEY,
-    total_market_volume BIGINT,
-    stocks_traded_count INT,
-    volume_moving_avg_7d BIGINT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+    CREATE TABLE IF NOT EXISTS market_liquidity_history (
+        full_date DATE PRIMARY KEY,
+        total_market_volume BIGINT,
+        stocks_traded_count INT,
+        volume_moving_avg_7d BIGINT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
 
-INSERT INTO market_liquidity_history(full_date, total_market_volume, stocks_traded_count, volume_moving_avg_7d)
-SELECT
-    full_date,
-    total_volume,
-    num_records,
-    volume_moving_avg_7d
-FROM (
+    INSERT INTO market_liquidity_history(full_date, total_market_volume, stocks_traded_count, volume_moving_avg_7d)
     SELECT
         full_date,
         total_volume,
         num_records,
-        AVG(total_volume) OVER (ORDER BY full_date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)::BIGINT AS volume_moving_avg_7d
-    FROM dm_dw.agg_volume_by_date
-) sub
-ON CONFLICT (full_date) DO NOTHING;
+        volume_moving_avg_7d
+    FROM (
+        SELECT
+            full_date,
+            total_volume,
+            num_records,
+            AVG(total_volume) OVER (ORDER BY full_date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)::BIGINT AS volume_moving_avg_7d
+        FROM dm_dw.agg_volume_by_date
+    ) sub
+    ON CONFLICT (full_date) DO NOTHING;
+
+    RAISE NOTICE 'DM Market Overview Completed.';
+END;
+$$;
