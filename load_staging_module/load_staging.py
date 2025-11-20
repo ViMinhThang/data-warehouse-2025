@@ -73,7 +73,7 @@ def main():
     staging_db = services['staging_db']
     log_db = services['log_db']
     email_service = services['email_service']
-
+    
     try:
         latest_extract_log = log_db.get_latest_log("EXTRACT", None)
         if not latest_extract_log or latest_extract_log.get("status") != "SUCCESS":
@@ -147,7 +147,7 @@ def main():
                         "FAILURE",
                         message=f"Lỗi lần {retry_count}: {e}",
                     )
-                    emails = config.get("emails")
+                    emails = config["emails"]
                     if not emails:
                         emails = []
                     email_service.send_email(
