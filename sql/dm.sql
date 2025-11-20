@@ -1,9 +1,3 @@
-CREATE EXTENSION IF NOT EXISTS postgres_fdw;
-
-CREATE SERVER dw_server FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'localhost', dbname 'dw', port '5432');
-
-CREATE USER MAPPING FOR CURRENT_USER SERVER dw_server OPTIONS (user 'fragile', password '123456');
-
 CREATE OR REPLACE PROCEDURE sp_build_dm_trend_analysis()
 LANGUAGE plpgsql
 AS $$
