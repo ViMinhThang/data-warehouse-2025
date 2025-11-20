@@ -1,7 +1,8 @@
 'use client';
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { MonthlyTrend } from '@/lib/db';
 
 interface MonthlyTrendChartProps {
@@ -46,104 +47,101 @@ export function MonthlyTrendChart({ data, ticker }: MonthlyTrendChartProps) {
   // Get unique tickers for legend
   const tickers = Array.from(new Set(data.map(d => d.ticker)));
 
-  // Colors for different tickers
-  const colors = [
-    'hsl(var(--chart-1))',
-    'hsl(var(--chart-2))',
-    'hsl(var(--chart-3))',
-    'hsl(var(--chart-4))',
-    'hsl(var(--chart-5))',
-  ];
+  // Dynamic chart config based on tickers
+  const chartConfig: ChartConfig = {};
+  tickers.forEach((ticker, index) => {
+    chartConfig[`${ticker}_close`] = {
+      label: `${ticker} Avg Close`,
+      color: `hsl(var(--chart-${(index % 5) + 1}))`,
+    };
+    chartConfig[`${ticker}_volume`] = {
+      label: `${ticker} Volume`,
+      color: `hsl(var(--chart-${(index % 5) + 1}))`,
+    };
+  });
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Monthly Stock Performance{ticker ? ` - ${ticker}` : ''}</CardTitle>
-        <CardDescription>
-          Monthly average close price and volume comparison
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-8">
-          {/* Average Close Price */}
-          <div>
-            <h3 className="text-sm font-medium mb-4">Average Close Price by Month</h3>
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="month" 
-                  className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
+    <div className="space-y-8">
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Monthly Average Close Price{ticker ? ` - ${ticker}` : ''}</CardTitle>
+          <CardDescription>
+            Comparison across months
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[350px] w-full">
+            <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis 
+                dataKey="month" 
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                angle={-45}
+                textAnchor="end"
+                height={80}
+              />
+              <YAxis 
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+              />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartLegend content={<ChartLegendContent />} />
+              {tickers.map((ticker) => (
+                <Bar
+                  key={ticker}
+                  dataKey={`${ticker}_close`}
+                  fill={`var(--color-${ticker}_close)`}
+                  radius={[4, 4, 0, 0]}
                 />
-                <YAxis 
-                  className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Legend />
-                {tickers.map((ticker, index) => (
-                  <Bar
-                    key={ticker}
-                    dataKey={`${ticker}_close`}
-                    fill={colors[index % colors.length]}
-                    name={`${ticker} Avg Close`}
-                    radius={[4, 4, 0, 0]}
-                  />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+              ))}
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
 
-          {/* Total Volume */}
-          <div>
-            <h3 className="text-sm font-medium mb-4">Total Volume by Month</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="month" 
-                  className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Monthly Total Volume</CardTitle>
+          <CardDescription>
+            Volume comparison across months
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis 
+                dataKey="month" 
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                angle={-45}
+                textAnchor="end"
+                height={80}
+              />
+              <YAxis 
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+              />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartLegend content={<ChartLegendContent />} />
+              {tickers.map((ticker) => (
+                <Bar
+                  key={ticker}
+                  dataKey={`${ticker}_volume`}
+                  fill={`var(--color-${ticker}_volume)`}
+                  radius={[4, 4, 0, 0]}
                 />
-                <YAxis 
-                  className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Legend />
-                {tickers.map((ticker, index) => (
-                  <Bar
-                    key={ticker}
-                    dataKey={`${ticker}_volume`}
-                    fill={colors[index % colors.length]}
-                    name={`${ticker} Volume`}
-                    radius={[4, 4, 0, 0]}
-                  />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+              ))}
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
+

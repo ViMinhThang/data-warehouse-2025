@@ -1,7 +1,8 @@
 'use client';
 
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { CartesianGrid, Line, LineChart, XAxis, YAxis, Bar, BarChart } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { DailyTrend } from '@/lib/db';
 import { format } from 'date-fns';
 
@@ -9,6 +10,33 @@ interface DailyTrendChartProps {
   data: DailyTrend[];
   ticker?: string;
 }
+
+const chartConfig = {
+  avgClose: {
+    label: "Avg Close",
+    color: "hsl(var(--chart-1))",
+  },
+  maxClose: {
+    label: "Max Close",
+    color: "hsl(var(--chart-2))",
+  },
+  minClose: {
+    label: "Min Close",
+    color: "hsl(var(--chart-3))",
+  },
+  volume: {
+    label: "Volume",
+    color: "hsl(var(--chart-4))",
+  },
+  rsi: {
+    label: "RSI",
+    color: "hsl(var(--chart-2))",
+  },
+  roc: {
+    label: "ROC",
+    color: "hsl(var(--chart-5))",
+  },
+} satisfies ChartConfig;
 
 export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
   // Format data for recharts
@@ -24,145 +52,135 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
   }));
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Daily Stock Trend{ticker ? ` - ${ticker}` : ''}</CardTitle>
-        <CardDescription>
-          Price movements and volume over time
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-8">
-          {/* Price Chart */}
-          <div>
-            <h3 className="text-sm font-medium mb-4">Price Trend</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="date" 
-                  className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                />
-                <YAxis 
-                  className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                  labelStyle={{ color: 'hsl(var(--foreground))' }}
-                />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="avgClose" 
-                  stroke="hsl(var(--chart-1))" 
-                  strokeWidth={2}
-                  name="Avg Close"
-                  dot={false}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="maxClose" 
-                  stroke="hsl(var(--chart-2))" 
-                  strokeWidth={1.5}
-                  strokeDasharray="5 5"
-                  name="Max Close"
-                  dot={false}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="minClose" 
-                  stroke="hsl(var(--chart-3))" 
-                  strokeWidth={1.5}
-                  strokeDasharray="5 5"
-                  name="Min Close"
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+    <div className="space-y-8">
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Daily Stock Trend{ticker ? ` - ${ticker}` : ''}</CardTitle>
+          <CardDescription>
+            Price movements over time
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+              />
+              <YAxis 
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+              />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartLegend content={<ChartLegendContent />} />
+              <Line 
+                type="monotone" 
+                dataKey="avgClose" 
+                stroke="var(--color-avgClose)" 
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="maxClose" 
+                stroke="var(--color-maxClose)" 
+                strokeWidth={1.5}
+                strokeDasharray="5 5"
+                dot={false}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="minClose" 
+                stroke="var(--color-minClose)" 
+                strokeWidth={1.5}
+                strokeDasharray="5 5"
+                dot={false}
+              />
+            </LineChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
 
-          {/* Volume Chart */}
-          <div>
-            <h3 className="text-sm font-medium mb-4">Trading Volume</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="date" 
-                  className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                />
-                <YAxis 
-                  className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Bar 
-                  dataKey="volume" 
-                  fill="hsl(var(--chart-4))" 
-                  name="Volume"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Trading Volume</CardTitle>
+          <CardDescription>
+            Daily trading volume
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[200px] w-full">
+            <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+              />
+              <YAxis 
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+              />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar 
+                dataKey="volume" 
+                fill="var(--color-volume)" 
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
 
-          {/* Technical Indicators */}
-          <div>
-            <h3 className="text-sm font-medium mb-4">Technical Indicators</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="date" 
-                  className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                />
-                <YAxis 
-                  className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="rsi" 
-                  stroke="hsl(var(--chart-2))" 
-                  strokeWidth={2}
-                  name="RSI"
-                  dot={false}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="roc" 
-                  stroke="hsl(var(--chart-5))" 
-                  strokeWidth={2}
-                  name="ROC"
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Technical Indicators</CardTitle>
+          <CardDescription>
+            RSI and ROC indicators
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[200px] w-full">
+            <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+              />
+              <YAxis 
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+              />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartLegend content={<ChartLegendContent />} />
+              <Line 
+                type="monotone" 
+                dataKey="rsi" 
+                stroke="var(--color-rsi)" 
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="roc" 
+                stroke="var(--color-roc)" 
+                strokeWidth={2}
+                dot={false}
+              />
+            </LineChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
+
