@@ -71,7 +71,7 @@ export function MonthlyTrendChart({ data, ticker }: MonthlyTrendChartProps) {
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[350px] w-full">
-            <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
                 dataKey="month" 
@@ -87,7 +87,10 @@ export function MonthlyTrendChart({ data, ticker }: MonthlyTrendChartProps) {
                 axisLine={false}
                 tickMargin={8}
               />
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip 
+                cursor={{ fill: 'hsl(var(--muted)/0.5)' }}
+                content={<ChartTooltipContent />} 
+              />
               <ChartLegend content={<ChartLegendContent />} />
               {tickers.map((ticker) => (
                 <Bar
@@ -111,7 +114,7 @@ export function MonthlyTrendChart({ data, ticker }: MonthlyTrendChartProps) {
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[300px] w-full">
-            <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
                 dataKey="month" 
@@ -127,7 +130,10 @@ export function MonthlyTrendChart({ data, ticker }: MonthlyTrendChartProps) {
                 axisLine={false}
                 tickMargin={8}
               />
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip 
+                cursor={{ fill: 'hsl(var(--muted)/0.5)' }}
+                content={<ChartTooltipContent />} 
+              />
               <ChartLegend content={<ChartLegendContent />} />
               {tickers.map((ticker) => (
                 <Bar

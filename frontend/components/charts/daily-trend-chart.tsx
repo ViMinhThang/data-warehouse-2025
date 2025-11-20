@@ -1,6 +1,6 @@
 'use client';
 
-import { CartesianGrid, Line, LineChart, XAxis, YAxis, Bar, BarChart } from 'recharts';
+import { CartesianGrid, Line, LineChart, XAxis, YAxis, Bar, BarChart, Area, AreaChart } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { DailyTrend } from '@/lib/db';
@@ -62,27 +62,40 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[300px] w-full">
-            <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="fillAvgClose" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--color-avgClose)" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="var(--color-avgClose)" stopOpacity={0.1} />
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
                 dataKey="date" 
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
+                minTickGap={32}
               />
               <YAxis 
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
+                domain={['auto', 'auto']}
               />
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip 
+                cursor={false}
+                content={<ChartTooltipContent indicator="dot" />} 
+              />
               <ChartLegend content={<ChartLegendContent />} />
-              <Line 
-                type="monotone" 
-                dataKey="avgClose" 
-                stroke="var(--color-avgClose)" 
+              <Area
+                dataKey="avgClose"
+                type="monotone"
+                fill="url(#fillAvgClose)"
+                fillOpacity={0.4}
+                stroke="var(--color-avgClose)"
                 strokeWidth={2}
-                dot={false}
+                activeDot={{ r: 6 }}
               />
               <Line 
                 type="monotone" 
@@ -91,6 +104,7 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
                 strokeWidth={1.5}
                 strokeDasharray="5 5"
                 dot={false}
+                activeDot={false}
               />
               <Line 
                 type="monotone" 
@@ -99,8 +113,9 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
                 strokeWidth={1.5}
                 strokeDasharray="5 5"
                 dot={false}
+                activeDot={false}
               />
-            </LineChart>
+            </AreaChart>
           </ChartContainer>
         </CardContent>
       </Card>
@@ -114,20 +129,24 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[200px] w-full">
-            <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
                 dataKey="date" 
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
+                minTickGap={32}
               />
               <YAxis 
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
               />
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip 
+                cursor={{ fill: 'hsl(var(--muted)/0.5)' }}
+                content={<ChartTooltipContent />} 
+              />
               <Bar 
                 dataKey="volume" 
                 fill="var(--color-volume)" 
@@ -147,20 +166,24 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[200px] w-full">
-            <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+            <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
                 dataKey="date" 
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
+                minTickGap={32}
               />
               <YAxis 
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
               />
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip 
+                cursor={false}
+                content={<ChartTooltipContent />} 
+              />
               <ChartLegend content={<ChartLegendContent />} />
               <Line 
                 type="monotone" 
@@ -168,6 +191,7 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
                 stroke="var(--color-rsi)" 
                 strokeWidth={2}
                 dot={false}
+                activeDot={{ r: 4 }}
               />
               <Line 
                 type="monotone" 
@@ -175,6 +199,7 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
                 stroke="var(--color-roc)" 
                 strokeWidth={2}
                 dot={false}
+                activeDot={{ r: 4 }}
               />
             </LineChart>
           </ChartContainer>
