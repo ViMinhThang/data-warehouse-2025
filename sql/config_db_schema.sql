@@ -120,7 +120,7 @@ VALUES (
     'Load dữ liệu cổ phiếu Mỹ vào staging',
     'admin',
     'admin',
-    ARRAY['22130251@st.hcmuaf.edu.vn']
+    ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']
 );
 
 
