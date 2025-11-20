@@ -13,7 +13,7 @@ class ConfigLoadStagingDatabase(BaseDatabase):
 
     def get_active_configs(self) -> List[Dict[str, Any]]:
         query = """
-        SELECT id, source_path, target_table, file_type, has_header, delimiter,
+        SELECT id, source_path, target_table, file_type, has_header, delimiter,emails,
                load_mode, retry_count, is_active
         FROM config_load_staging
         WHERE is_active = true;

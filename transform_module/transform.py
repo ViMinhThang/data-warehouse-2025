@@ -1,8 +1,8 @@
+import csv
 import os
-import logging
 from dotenv import load_dotenv
 from db.staging_db import StagingDatabase
-from db.config_load_staging_db import ConfigLoadStagingDatabase
+from db.config_transform_db import ConfigTransformDatabase
 from db.log_db import LogDatabase
 from email_service.email_service import EmailService
 from utils.logger_util import log_message
@@ -28,7 +28,7 @@ def init_services():
         "port": int(os.getenv("DB_PORT", 5432)),
     }
 
-    config_db = ConfigLoadStagingDatabase(**db_params_config)
+    config_db = ConfigTransformDatabase(**db_params_config)
     staging_db = StagingDatabase(**db_params_staging)
     log_db = LogDatabase(**db_params_config)
     email_service = EmailService(
@@ -42,10 +42,20 @@ def init_services():
 
 
 def run_transform_procedure(
-    staging_db: StagingDatabase, log_db: LogDatabase, email_service: EmailService
+    staging_db: StagingDatabase,
+    config_db: ConfigTransformDatabase,
+    log_db: LogDatabase,
+    email_service: EmailService,
 ):
-    """Chạy procedure transform nếu LOAD_STAGING thành công"""
     try:
+        config = config_db.get_latest_active_config()
+        rsi_window = config["rsi_window"]
+        roc_window = config["roc_window"]
+        bb_window = config["bb_window"]
+        dim_path = config["dim_path"]
+        fact_path = config["fact_path"]
+        procedure = config.get("procedure_transform", "sp_transform_market_prices")
+
         latest_load_log = log_db.get_latest_log("LOAD_STAGING", None)
         if not latest_load_log or latest_load_log.get("status") != "SUCCESS":
             log_message(
@@ -58,7 +68,6 @@ def run_transform_procedure(
             print("Bỏ qua TRANSFORM vì LOAD_STAGING chưa SUCCESS.")
             return
 
-        # Log bắt đầu transform
         log_message(
             log_db,
             "TRANSFORM",
@@ -67,16 +76,18 @@ def run_transform_procedure(
             message="Bắt đầu chạy procedure transform.",
         )
 
-        # Chạy procedure
+        # Thực hiện procedure transform
         with staging_db.conn.cursor() as cursor:
             log_message(
                 log_db,
                 "TRANSFORM",
                 None,
                 "PROCESSING",
-                message="Đang chạy sp_transform_market_prices()...",
+                message=f"Đang chạy {procedure}...",
             )
-            cursor.execute("CALL sp_transform_market_prices();")
+            cursor.execute(
+                f"CALL {procedure}(%s, %s, %s);", (rsi_window, roc_window, bb_window)
+            )
             staging_db.conn.commit()
 
         log_message(
@@ -88,16 +99,41 @@ def run_transform_procedure(
         )
         print("TRANSFORM completed successfully.")
 
+        # Export CSV theo đường dẫn từ config
+        export_table_to_csv(staging_db, "dim_stock", dim_path)
+        export_table_to_csv(staging_db, "fact_stock_indicators", fact_path)
+
     except Exception as e:
         log_message(
-            log_db, "TRANSFORM", None, "FAILURE", message=f"Lỗi khi chạy TRANSFORM: {e}"
+            log_db,
+            "TRANSFORM",
+            None,
+            "FAILURE",
+            message=f"Lỗi khi chạy TRANSFORM: {e}",
         )
+        emails = config.get("emails")
+        if not emails:
+            emails = []
         email_service.send_email(
-            to_addrs=[os.getenv("EMAIL_ADMIN", "admin@example.com")],
-            subject="[ETL Transform] Lỗi procedure transform",
-            body=f"Lỗi khi chạy procedure transform:\n\n{e}",
-        )
+            to_addrs=emails,
+            subject=f"[ETL Extract] Lỗi Config ID={config.get('id')}",
+            body=f"Lỗi tổng thể trong process_config:\n\n{e}",
+            )
         raise
+
+
+def export_table_to_csv(staging_db, table_name, file_path):
+    """Export dữ liệu bảng staging sang CSV"""
+    with staging_db.conn.cursor() as cursor:
+        cursor.execute(f"SELECT * FROM {table_name}")
+        rows = cursor.fetchall()
+        colnames = [desc[0] for desc in cursor.description]
+
+    with open(file_path, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(colnames)
+        writer.writerows(rows)
+    print(f"Export {len(rows)} rows from {table_name} to {file_path}")
 
 
 def main():
@@ -105,7 +141,7 @@ def main():
     config_db, staging_db, log_db, email_service = init_services()
 
     try:
-        run_transform_procedure(staging_db, log_db, email_service)
+        run_transform_procedure(staging_db, config_db, log_db, email_service)
     finally:
         config_db.close()
         staging_db.close()

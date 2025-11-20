@@ -73,7 +73,7 @@ def main():
     staging_db = services['staging_db']
     log_db = services['log_db']
     email_service = services['email_service']
-
+    
     try:
         latest_extract_log = log_db.get_latest_log("EXTRACT", None)
         if not latest_extract_log or latest_extract_log.get("status") != "SUCCESS":
@@ -138,6 +138,15 @@ def main():
                 try:
                     load_csv_to_staging(config, staging_db, log_db)
                     load_success = True
+                    emails = config.get("emails")
+                    print(config)
+                    if not emails:
+                        emails = []
+                    email_service.send_email(
+                    to_addrs=emails,
+                    subject=f"test",
+                    body=f"test",
+                    )
                 except Exception as e:
                     retry_count += 1
                     log_message(
@@ -147,10 +156,13 @@ def main():
                         "FAILURE",
                         message=f"Lỗi lần {retry_count}: {e}",
                     )
+                    emails = config.get("emails")
+                    if not emails:
+                        emails = []
                     email_service.send_email(
-                        to_addrs=[os.getenv("EMAIL_ADMIN", "admin@example.com")],
-                        subject=f"[ETL] Lỗi Load Staging (config ID={config_id})",
-                        body=f"Lỗi khi load dữ liệu staging:\n\n{e}",
+                        to_addrs=emails,
+                        subject=f"[ETL Extract] Lỗi Config ID={config.get('id')}",
+                        body=f"Lỗi tổng thể trong process_config:\n\n{e}",
                     )
 
             if not load_success:
@@ -168,6 +180,7 @@ def main():
         )
 
     finally:
+       
         config_db.close()
         staging_db.close()
         log_db.close()

@@ -32,6 +32,14 @@
       "module": "load_warehouse_module.load_warehouse_module",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Debug Load Data Mart Module",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "load_data_mart_module.load_data_mart_module",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
     }
   ]
 }

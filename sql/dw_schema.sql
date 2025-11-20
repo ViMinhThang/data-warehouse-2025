@@ -158,106 +158,61 @@ CREATE TABLE fact_stock_indicators (
 -- ===================================
 CREATE INDEX IF NOT EXISTS idx_fact_stock_sk ON fact_stock_indicators(stock_sk);
 CREATE INDEX IF NOT EXISTS idx_fact_date_sk ON fact_stock_indicators(date_sk);
-
-CREATE OR REPLACE PROCEDURE sp_load_stock_files(
-    dim_path VARCHAR,
-    fact_path VARCHAR
-)
+CREATE OR REPLACE PROCEDURE sp_load_stock_files_from_tmp()
 LANGUAGE plpgsql
 AS $$
 DECLARE
     inserted_dim INT := 0;
     inserted_fact INT := 0;
-    skipped_fact INT := 0;
 BEGIN
     -- ============================
-    -- 1. Load dim_stock từ CSV
+    -- 1. Load dim_stock từ tmp_dim_stock
     -- ============================
-    CREATE TEMP TABLE tmp_dim_stock (
-        id INT,
-        ticker VARCHAR(20)
-    );
+    INSERT INTO dim_stock(ticker)
+    SELECT DISTINCT t.ticker
+    FROM tmp_dim_stock t
+    LEFT JOIN dim_stock d ON t.ticker = d.ticker
+    WHERE d.ticker IS NULL;
 
-    EXECUTE format(
-        'COPY tmp_dim_stock(id, ticker) FROM %L DELIMITER '','' CSV HEADER;',
-        dim_path
-    );
-
-    -- Insert ticker mới, tránh duplicate
-INSERT INTO dim_stock(ticker)
-SELECT DISTINCT t.ticker
-FROM tmp_dim_stock t
-LEFT JOIN dim_stock d ON t.ticker = d.ticker
-WHERE d.ticker IS NULL;
-
-GET DIAGNOSTICS inserted_dim = ROW_COUNT;
-RAISE NOTICE 'Dim_stock: % bản ghi mới insert', inserted_dim;
-
-    DROP TABLE tmp_dim_stock;
+    GET DIAGNOSTICS inserted_dim = ROW_COUNT;
+    RAISE NOTICE 'Dim_stock: % bản ghi mới insert', inserted_dim;
 
     -- ============================
-    -- 2. Load fact_stock_indicators từ CSV
+    -- 2. Load fact_stock_indicators từ tmp_fact_stock
     -- ============================
-    CREATE TEMP TABLE tmp_fact_stock (
-        record_sk INT,
-        stock_sk INT,
-        datetime_utc TIMESTAMPTZ,
-        close NUMERIC(12,4),
-        volume BIGINT,
-        diff NUMERIC(12,4),
-        percent_change_close NUMERIC(12,6),
-        rsi NUMERIC(8,4),
-        roc NUMERIC(8,4),
-        bb_upper NUMERIC(12,4),
-        bb_lower NUMERIC(12,4),
-        created_at TIMESTAMP
-    );
+    INSERT INTO fact_stock_indicators(
+        stock_sk,
+        date_sk,
+        close,
+        volume,
+        diff,
+        percent_change_close,
+        rsi,
+        roc,
+        bb_upper,
+        bb_lower,
+        created_at
+    )
+    SELECT 
+        f.stock_sk,
+        d.date_sk,
+        f.close,
+        f.volume,
+        f.diff,
+        f.percent_change_close,
+        f.rsi,
+        f.roc,
+        f.bb_upper,
+        f.bb_lower,
+        f.created_at
+    FROM tmp_fact_stock f
+    JOIN dim_date d ON d.full_date = f.datetime_utc::DATE
+    LEFT JOIN fact_stock_indicators fi
+        ON fi.stock_sk = f.stock_sk AND fi.date_sk = d.date_sk
+    WHERE fi.record_sk IS NULL;
 
-    EXECUTE format(
-        'COPY tmp_fact_stock(
-            record_sk, stock_sk, datetime_utc, close, volume, diff,
-            percent_change_close, rsi, roc, bb_upper, bb_lower, created_at
-        ) FROM %L DELIMITER '','' CSV HEADER;',
-        fact_path
-    );
-
-    -- Insert vào fact_stock_indicators, chuyển datetime_utc -> date_sk
-INSERT INTO fact_stock_indicators(
-    stock_sk,
-    date_sk,
-    close,
-    volume,
-    diff,
-    percent_change_close,
-    rsi,
-    roc,
-    bb_upper,
-    bb_lower,
-    created_at
-)
-SELECT 
-    f.stock_sk,
-    d.date_sk,
-    f.close,
-    f.volume,
-    f.diff,
-    f.percent_change_close,
-    f.rsi,
-    f.roc,
-    f.bb_upper,
-    f.bb_lower,
-    f.created_at
-FROM tmp_fact_stock f
-JOIN dim_date d ON d.full_date = f.datetime_utc::DATE
-LEFT JOIN fact_stock_indicators fi
-    ON fi.stock_sk = f.stock_sk AND fi.date_sk = d.date_sk
-WHERE fi.record_sk IS NULL;
-
-GET DIAGNOSTICS inserted_fact = ROW_COUNT;
-RAISE NOTICE 'Fact_stock_indicators: % bản ghi mới insert', inserted_fact;
-
-
-    DROP TABLE tmp_fact_stock;
+    GET DIAGNOSTICS inserted_fact = ROW_COUNT;
+    RAISE NOTICE 'Fact_stock_indicators: % bản ghi mới insert', inserted_fact;
 
 END;
 $$;

@@ -17,7 +17,7 @@ def parse_tickers(tickers_str_or_list):
 
 
 def fetch_yfinance_data(ticker: str, period: str, interval: str) -> pd.DataFrame:
-    logging.info(f"📥 Fetching data for {ticker} ({period}, {interval}) ...")
+    logging.info(f"Fetching data for {ticker} ({period}, {interval}) ...")
     data = yf.download(
         ticker,
         period=period,
@@ -27,7 +27,7 @@ def fetch_yfinance_data(ticker: str, period: str, interval: str) -> pd.DataFrame
     )
 
     if data.empty:
-        logging.warning(f"⚠️ Không có dữ liệu cho {ticker}")
+        logging.warning(f"Không có dữ liệu cho {ticker}")
         return pd.DataFrame()
 
     if data.index.tz is None:

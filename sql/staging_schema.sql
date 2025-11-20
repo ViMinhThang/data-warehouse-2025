@@ -10,6 +10,8 @@ DROP TABLE IF EXISTS dim_date CASCADE;
 
 DROP TABLE IF EXISTS fact_stock_indicators CASCADE;
 
+CREATE EXTENSION IF NOT EXISTS dblink;
+
 CREATE TABLE
     stg_market_prices (
         id SERIAL PRIMARY KEY,

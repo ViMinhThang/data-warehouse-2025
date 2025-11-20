@@ -6,7 +6,7 @@ from db.base_db import BaseDatabase
 class ConfigLoadDWDatabase(BaseDatabase):
     def get_active_configs(self) -> List[Dict[str, Any]]:
         query = """
-        SELECT id, source_table, target_table, load_mode, is_active
+        SELECT id, source_table, target_table, load_mode, is_active, emails
         FROM config_load_dw
         WHERE is_active = TRUE;
         """

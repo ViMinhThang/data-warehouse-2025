@@ -1,23 +1,11 @@
-CREATE OR REPLACE PROCEDURE sp_transform_market_prices()
+CREATE OR REPLACE PROCEDURE sp_transform_market_prices(
+    p_rsi_window INT,
+    p_roc_window INT,
+    p_bb_window INT
+)
 LANGUAGE plpgsql
 AS $$
-DECLARE
-    v_rsi_window INT;
-    v_roc_window INT;
-    v_bb_window INT;
 BEGIN
-    -- Lấy cấu hình từ config database
-    SELECT rsi_window, roc_window, bb_window
-    INTO v_rsi_window, v_roc_window, v_bb_window
-    FROM dblink(
-        'dbname=config user=postgres password=204863 host=localhost port=5432',
-        'SELECT rsi_window, roc_window, bb_window
-         FROM config_transform
-         WHERE is_active = TRUE
-         ORDER BY id DESC
-         LIMIT 1'
-    ) AS t(rsi_window INT, roc_window INT, bb_window INT);
-
     -- Cập nhật dim_stock
     INSERT INTO dim_stock (ticker)
     SELECT DISTINCT ticker
@@ -32,13 +20,13 @@ BEGIN
         JOIN dim_stock ds ON ds.ticker = s.ticker
     ),
     roc_calc AS (
-        SELECT *, LAG(close, v_roc_window) OVER (PARTITION BY ticker ORDER BY datetime_utc) AS close_n
+        SELECT *, LAG(close, p_roc_window) OVER (PARTITION BY ticker ORDER BY datetime_utc) AS close_n
         FROM sp
     ),
     bb_calc AS (
         SELECT *,
-               AVG(close) OVER (PARTITION BY ticker ORDER BY datetime_utc ROWS BETWEEN v_bb_window-1 PRECEDING AND CURRENT ROW) AS ma,
-               STDDEV(close) OVER (PARTITION BY ticker ORDER BY datetime_utc ROWS BETWEEN v_bb_window-1 PRECEDING AND CURRENT ROW) AS std
+               AVG(close) OVER (PARTITION BY ticker ORDER BY datetime_utc ROWS BETWEEN p_bb_window-1 PRECEDING AND CURRENT ROW) AS ma,
+               STDDEV(close) OVER (PARTITION BY ticker ORDER BY datetime_utc ROWS BETWEEN p_bb_window-1 PRECEDING AND CURRENT ROW) AS std
         FROM roc_calc
     ),
     rsi_calc AS (
@@ -48,7 +36,7 @@ BEGIN
             SELECT *, close - LAG(close) OVER (PARTITION BY ticker ORDER BY datetime_utc) AS change
             FROM bb_calc
         ) t
-        WINDOW w AS (PARTITION BY ticker ORDER BY datetime_utc ROWS BETWEEN v_rsi_window-1 PRECEDING AND CURRENT ROW)
+        WINDOW w AS (PARTITION BY ticker ORDER BY datetime_utc ROWS BETWEEN p_rsi_window-1 PRECEDING AND CURRENT ROW)
     ),
     final_calc AS (
         SELECT *,
@@ -72,13 +60,9 @@ BEGIN
           AND rsi IS NOT NULL AND roc IS NOT NULL
           AND bb_upper IS NOT NULL AND bb_lower IS NOT NULL;
 
-    -- Xuất CSV dim_stock và fact_stock_indicators
-    EXECUTE 'COPY dim_stock TO ''C:\\PostgresExports\\dim_stock.csv'' WITH CSV HEADER';
-    EXECUTE 'COPY fact_stock_indicators TO ''C:\\PostgresExports\\fact_stock_indicators.csv'' WITH CSV HEADER';
 
     -- Xóa dữ liệu staging
     TRUNCATE TABLE stg_market_prices;
 
-    RAISE NOTICE 'Transform thành công, stg_market_prices đã truncate và CSV dim_stock + fact đã xuất tại C:\Users\huynh\OneDrive\Desktop\warehousetest';
 END;
 $$;
