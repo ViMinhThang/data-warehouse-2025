@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, TrendingUp, Trophy, LayoutDashboard } from "lucide-react"
+import { BarChart3, TrendingUp, Trophy, LayoutDashboard, Activity } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const sidebarItems = [
@@ -12,6 +12,27 @@ const sidebarItems = [
     icon: TrendingUp,
   },
   {
+    title: "Monthly Trends",
+    href: "/monthly-trend",
+    icon: BarChart3,
+  },
+  {
+    title: "Stock Ranking",
+    href: "/stock-ranking",
+    icon: Trophy,
+  },
+  {
+    title: "Market Liquidity",
+    href: "/market-liquidity",
+    icon: Activity,
+  },
+]
+
+export function Sidebar() {
+  const pathname = usePathname()
+
+  return (
+    <div className="flex h-full flex-col border-r bg-card">
       <div className="flex h-14 items-center border-b px-4">
         <Link href="/" className="flex items-center gap-2 font-semibold">
           <LayoutDashboard className="h-6 w-6 text-primary" />

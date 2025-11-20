@@ -3,12 +3,18 @@ import { query, StockRanking } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const limit = searchParams.get('limit') || '50';
-    const sortBy = searchParams.get('sort_by') || 'price_change';
-    const order = searchParams.get('order') || 'DESC';
+    const queryText = `
+      SELECT * FROM stock_ranking_snapshot
+      ORDER BY price_change DESC
+      LIMIT 100
+    `;
+    const result = await query<StockRanking>(queryText);
 
-    // Validate sort column to prevent SQL injection
+    return NextResponse.json({
+      success: true,
+      data: result.rows,
+      count: result.rowCount,
+    });
   } catch (error) {
     console.error('Error fetching stock ranking:', error);
     return NextResponse.json(

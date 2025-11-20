@@ -12,7 +12,7 @@ function ChartSkeleton() {
 }
 
 export default async function MonthlyTrendPage() {
-  const monthlyData = await fetchMonthlyTrend({ year: 2024 }).catch(() => []);
+  const monthlyData = await fetchMonthlyTrend().catch(() => []);
 
   return (
     <div className="space-y-6">

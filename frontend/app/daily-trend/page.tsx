@@ -12,7 +12,7 @@ function ChartSkeleton() {
 }
 
 export default async function DailyTrendPage() {
-  const dailyData = await fetchDailyTrend({ ticker: undefined }).catch(() => []);
+  const dailyData = await fetchDailyTrend().catch(() => []);
 
   return (
     <div className="space-y-6">

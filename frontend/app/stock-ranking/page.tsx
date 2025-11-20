@@ -12,7 +12,7 @@ function TableSkeleton() {
 }
 
 export default async function StockRankingPage() {
-  const rankingData = await fetchStockRanking({ limit: 50 }).catch(() => []);
+  const rankingData = await fetchStockRanking().catch(() => []);
 
   return (
     <div className="space-y-6">

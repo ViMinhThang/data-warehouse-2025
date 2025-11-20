@@ -61,7 +61,7 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <ChartContainer config={chartConfig} className="h-[300px] min-h-[300px] w-full">
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="fillAvgClose" x1="0" y1="0" x2="0" y2="1">
@@ -128,7 +128,7 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-[200px] w-full">
+          <ChartContainer config={chartConfig} className="h-[200px] min-h-[200px] w-full">
             <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
@@ -165,7 +165,7 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-[200px] w-full">
+          <ChartContainer config={chartConfig} className="h-[200px] min-h-[200px] w-full">
             <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
@@ -179,6 +179,7 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
+                domain={[0, 100]}
               />
               <ChartTooltip 
                 cursor={false}

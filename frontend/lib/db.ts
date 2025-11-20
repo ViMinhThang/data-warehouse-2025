@@ -49,6 +49,14 @@ export interface StockRanking {
   created_at: string;
 }
 
+export interface MarketLiquidity {
+  full_date: string;
+  total_market_volume: number;
+  stocks_traded_count: number;
+  volume_moving_avg_7d: number;
+  created_at: string;
+}
+
 // Query helper function
 export async function query<T>(
   text: string,
