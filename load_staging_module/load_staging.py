@@ -176,8 +176,8 @@ def main():
             emails = []
         email_service.send_email(
             to_addrs=emails,
-            subject=f"[ETL Extract] Lỗi Config ID={config.get('id')}",
-            body=f"Lỗi tổng thể trong process_config:\n\n{e}",
+            subject=f"test",
+            body=f"test",
         )
         config_db.close()
         staging_db.close()
