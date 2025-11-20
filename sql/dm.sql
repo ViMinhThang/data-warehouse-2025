@@ -113,11 +113,13 @@ SELECT
     full_date,
     total_volume,
     num_records,
-    AVG(total_volume)::BIGINT OVER (ORDER BY full_date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)
-FROM dm_dw.agg_volume_by_date d
+    volume_moving_avg_7d
+FROM (
+    SELECT
+        full_date,
+        total_volume,
+        num_records,
+        AVG(total_volume) OVER (ORDER BY full_date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)::BIGINT AS volume_moving_avg_7d
+    FROM dm_dw.agg_volume_by_date
+) sub
 ON CONFLICT (full_date) DO NOTHING;
-
-
-    RAISE NOTICE 'DM Market Overview Completed.';
-END;
-$$;
