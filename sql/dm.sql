@@ -24,7 +24,6 @@ BEGIN
     FROM dm_dw.agg_daily_stock_summary d
     ON CONFLICT (ticker, full_date) DO NOTHING;
 
-    -- MONTHLY TREND
     CREATE TABLE IF NOT EXISTS stock_monthly_trend (
         ticker VARCHAR(20),
         year INT,
