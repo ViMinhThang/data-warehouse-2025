@@ -33,7 +33,7 @@ INSERT INTO config_extract (
     emails, retry_count, is_active, note, created_by, updated_by
 )
 VALUES (
-    'AAPL,MSFT,GOOG',
+    'AAPL,MSFT,GOOG','NVDA','TSLA','QCOM','AMD',
     '1mo',
     '5m',
     './output/yfinance',
