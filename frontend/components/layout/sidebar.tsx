@@ -12,22 +12,6 @@ const sidebarItems = [
     icon: TrendingUp,
   },
   {
-    title: "Monthly Trends",
-    href: "/monthly-trend",
-    icon: BarChart3,
-  },
-  {
-    title: "Stock Ranking",
-    href: "/stock-ranking",
-    icon: Trophy,
-  },
-]
-
-export function Sidebar() {
-  const pathname = usePathname()
-
-  return (
-    <div className="flex h-screen w-64 flex-col border-r bg-card">
       <div className="flex h-14 items-center border-b px-4">
         <Link href="/" className="flex items-center gap-2 font-semibold">
           <LayoutDashboard className="h-6 w-6 text-primary" />
