@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 # Giả định các module này bạn đã có
 from db.config_data_mart_db import ConfigDMDatabase
-from db.dw_db import DWDatabase
+from db.dm_db import DMDatabase
 from db.log_db import LogDatabase
 from email_service.email_service import EmailService
 from utils.logger_util import log_message
@@ -22,16 +22,16 @@ def init_services():
         "port": int(os.getenv("DB_PORT", 5432)),
     }
 
-    db_params_dw = {
+    db_params_dm = {
         "host": os.getenv("DB_HOST"),
-        "dbname": os.getenv("DB_NAME_DW"),
+        "dbname": os.getenv("DB_NAME_DM"),
         "user": os.getenv("DB_USER"),
         "password": os.getenv("DB_PASSWORD"),
         "port": int(os.getenv("DB_PORT", 5432)),
     }
 
     config_db = ConfigDMDatabase(**db_params_config)
-    dw_db = DWDatabase(**db_params_dw)
+    dw_db = DMDatabase(**db_params_dm)
     log_db = LogDatabase(**db_params_config)
 
     email_service = EmailService(
