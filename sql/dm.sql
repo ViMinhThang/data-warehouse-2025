@@ -20,7 +20,7 @@ BEGIN
     );
 
     -- Ensure primary key exists
-    DO $$
+    DO $_$
     BEGIN
         IF NOT EXISTS (
             SELECT 1 
@@ -31,7 +31,7 @@ BEGIN
             ALTER TABLE stock_daily_trend
                 ADD CONSTRAINT stock_daily_trend_pk PRIMARY KEY(ticker, full_date);
         END IF;
-    END$$;
+    END $_$;
 
     INSERT INTO stock_daily_trend(ticker, full_date, avg_close, max_close, min_close, total_volume, avg_rsi, avg_roc)
     SELECT ticker, full_date, avg_close, max_close, min_close,
@@ -52,7 +52,7 @@ BEGIN
     );
 
     -- Ensure primary key exists
-    DO $$
+    DO $_$
     BEGIN
         IF NOT EXISTS (
             SELECT 1 
@@ -63,7 +63,7 @@ BEGIN
             ALTER TABLE stock_monthly_trend
                 ADD CONSTRAINT stock_monthly_trend_pk PRIMARY KEY(ticker, year, month);
         END IF;
-    END$$;
+    END $_$;
 
     INSERT INTO stock_monthly_trend(ticker, year, month, avg_close, total_volume, avg_rsi, avg_roc)
     SELECT ticker, year, month,
@@ -98,7 +98,7 @@ BEGIN
     );
 
     -- Ensure primary key exists
-    DO $$
+    DO $_$
     BEGIN
         IF NOT EXISTS (
             SELECT 1 
@@ -109,7 +109,7 @@ BEGIN
             ALTER TABLE stock_ranking_snapshot
                 ADD CONSTRAINT stock_ranking_snapshot_pk PRIMARY KEY(ticker, snapshot_date);
         END IF;
-    END$$;
+    END $_$;
 
     INSERT INTO stock_ranking_snapshot(
         ticker, snapshot_date, min_close, max_close, price_change, 
@@ -159,7 +159,10 @@ BEGIN
         full_date,
         total_volume,
         num_records,
-        AVG(total_volume) OVER (ORDER BY full_date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)::BIGINT AS volume_moving_avg_7d
+        AVG(total_volume) OVER (
+            ORDER BY full_date 
+            ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+        )::BIGINT AS volume_moving_avg_7d
     FROM dm_dw.agg_volume_by_date
     ON CONFLICT (full_date) DO NOTHING;
 
