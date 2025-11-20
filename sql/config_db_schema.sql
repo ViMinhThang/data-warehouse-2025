@@ -33,7 +33,7 @@ INSERT INTO config_extract (
     emails, retry_count, is_active, note, created_by, updated_by
 )
 VALUES (
-    'AAPL,MSFT,GOOG','NVDA','TSLA','QCOM','AMD',   -- PROBLEM: 5 values here
+    'AAPL,MSFT,GOOG,NVDA,TSLA,QCOM,AMD',  -- all tickers in one string
     '1mo',
     '5m',
     './output/yfinance',
@@ -44,6 +44,7 @@ VALUES (
     'admin',
     'admin'
 );
+
 
 
 ------------------------------------------------------------
