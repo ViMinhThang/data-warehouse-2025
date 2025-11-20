@@ -2,33 +2,38 @@
 -- DROP TABLES (nếu đã tồn tại)
 -- ===================================
 DROP TABLE IF EXISTS fact_stock_indicators CASCADE;
+
 DROP TABLE IF EXISTS dim_stock CASCADE;
+
 DROP TABLE IF EXISTS dim_date CASCADE;
+
 DROP TABLE IF EXISTS dim_datetime CASCADE;
 
 -- ===================================
 -- DIMENSION: STOCK
 -- ===================================
-CREATE TABLE dim_stock (
-    stock_sk SERIAL PRIMARY KEY,
-    ticker VARCHAR(20) NOT NULL UNIQUE
-);
+CREATE TABLE
+    dim_stock (
+        stock_sk SERIAL PRIMARY KEY,
+        ticker VARCHAR(20) NOT NULL UNIQUE
+    );
 
 -- ===================================
 -- DIMENSION: DATE
 -- ===================================
-CREATE TABLE dim_date (
-    date_sk SERIAL PRIMARY KEY,
-    full_date DATE NOT NULL UNIQUE,
-    year INT,
-    quarter INT,
-    month INT,
-    month_name VARCHAR(20),
-    day INT,
-    weekday INT,
-    weekday_name VARCHAR(10),
-    is_weekend BOOLEAN
-);
+CREATE TABLE
+    dim_date (
+        date_sk SERIAL PRIMARY KEY,
+        full_date DATE NOT NULL UNIQUE,
+        year INT,
+        quarter INT,
+        month INT,
+        month_name VARCHAR(20),
+        day INT,
+        weekday INT,
+        weekday_name VARCHAR(10),
+        is_weekend BOOLEAN
+    );
 
 -- Populate dim_date từ 2010 đến 2035
 DO $$
@@ -58,57 +63,65 @@ END $$;
 -- ===================================
 -- FACT: STOCK INDICATORS
 -- ===================================
-CREATE TABLE fact_stock_indicators (
-    record_sk SERIAL PRIMARY KEY,
-    stock_sk INT NOT NULL REFERENCES dim_stock(stock_sk) ON DELETE CASCADE,
-    date_sk INT NOT NULL REFERENCES dim_date(date_sk) ON DELETE CASCADE,
-    close NUMERIC(12,4),
-    volume BIGINT,
-    diff NUMERIC(12,4),
-    percent_change_close NUMERIC(12,6),
-    rsi NUMERIC(8,4),
-    roc NUMERIC(8,4),
-    bb_upper NUMERIC(12,4),
-    bb_lower NUMERIC(12,4),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+CREATE TABLE
+    fact_stock_indicators (
+        record_sk SERIAL PRIMARY KEY,
+        stock_sk INT NOT NULL REFERENCES dim_stock (stock_sk) ON DELETE CASCADE,
+        date_sk INT NOT NULL REFERENCES dim_date (date_sk) ON DELETE CASCADE,
+        close NUMERIC(12, 4),
+        volume BIGINT,
+        diff NUMERIC(12, 4),
+        percent_change_close NUMERIC(12, 6),
+        rsi NUMERIC(8, 4),
+        roc NUMERIC(8, 4),
+        bb_upper NUMERIC(12, 4),
+        bb_lower NUMERIC(12, 4),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
 
 -- ===================================
 -- INDEXES
 -- ===================================
-CREATE INDEX IF NOT EXISTS idx_fact_stock_sk ON fact_stock_indicators(stock_sk);
-CREATE INDEX IF NOT EXISTS idx_fact_date_sk ON fact_stock_indicators(date_sk);
+CREATE INDEX IF NOT EXISTS idx_fact_stock_sk ON fact_stock_indicators (stock_sk);
+
+CREATE INDEX IF NOT EXISTS idx_fact_date_sk ON fact_stock_indicators (date_sk);
+
 -- ===================================
 -- DROP TABLES (nếu đã tồn tại)
 -- ===================================
 DROP TABLE IF EXISTS fact_stock_indicators CASCADE;
+
 DROP TABLE IF EXISTS dim_stock CASCADE;
+
 DROP TABLE IF EXISTS dim_date CASCADE;
+
 DROP TABLE IF EXISTS dim_datetime CASCADE;
 
 -- ===================================
 -- DIMENSION: STOCK
 -- ===================================
-CREATE TABLE dim_stock (
-    stock_sk SERIAL PRIMARY KEY,
-    ticker VARCHAR(20) NOT NULL UNIQUE
-);
+CREATE TABLE
+    dim_stock (
+        stock_sk SERIAL PRIMARY KEY,
+        ticker VARCHAR(20) NOT NULL UNIQUE
+    );
 
 -- ===================================
 -- DIMENSION: DATE
 -- ===================================
-CREATE TABLE dim_date (
-    date_sk SERIAL PRIMARY KEY,
-    full_date DATE NOT NULL UNIQUE,
-    year INT,
-    quarter INT,
-    month INT,
-    month_name VARCHAR(20),
-    day INT,
-    weekday INT,
-    weekday_name VARCHAR(10),
-    is_weekend BOOLEAN
-);
+CREATE TABLE
+    dim_date (
+        date_sk SERIAL PRIMARY KEY,
+        full_date DATE NOT NULL UNIQUE,
+        year INT,
+        quarter INT,
+        month INT,
+        month_name VARCHAR(20),
+        day INT,
+        weekday INT,
+        weekday_name VARCHAR(10),
+        is_weekend BOOLEAN
+    );
 
 -- Populate dim_date từ 2010 đến 2035
 DO $$
@@ -138,29 +151,31 @@ END $$;
 -- ===================================
 -- FACT: STOCK INDICATORS
 -- ===================================
-CREATE TABLE fact_stock_indicators (
-    record_sk SERIAL PRIMARY KEY,
-    stock_sk INT NOT NULL REFERENCES dim_stock(stock_sk) ON DELETE CASCADE,
-    date_sk INT NOT NULL REFERENCES dim_date(date_sk) ON DELETE CASCADE,
-    close NUMERIC(12,4),
-    volume BIGINT,
-    diff NUMERIC(12,4),
-    percent_change_close NUMERIC(12,6),
-    rsi NUMERIC(8,4),
-    roc NUMERIC(8,4),
-    bb_upper NUMERIC(12,4),
-    bb_lower NUMERIC(12,4),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+CREATE TABLE
+    fact_stock_indicators (
+        record_sk SERIAL PRIMARY KEY,
+        stock_sk INT NOT NULL REFERENCES dim_stock (stock_sk) ON DELETE CASCADE,
+        date_sk INT NOT NULL REFERENCES dim_date (date_sk) ON DELETE CASCADE,
+        close NUMERIC(12, 4),
+        volume BIGINT,
+        diff NUMERIC(12, 4),
+        percent_change_close NUMERIC(12, 6),
+        rsi NUMERIC(8, 4),
+        roc NUMERIC(8, 4),
+        bb_upper NUMERIC(12, 4),
+        bb_lower NUMERIC(12, 4),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
 
 -- ===================================
 -- INDEXES
 -- ===================================
-CREATE INDEX IF NOT EXISTS idx_fact_stock_sk ON fact_stock_indicators(stock_sk);
-CREATE INDEX IF NOT EXISTS idx_fact_date_sk ON fact_stock_indicators(date_sk);
-CREATE OR REPLACE PROCEDURE sp_load_stock_files_from_tmp()
-LANGUAGE plpgsql
-AS $$
+CREATE INDEX IF NOT EXISTS idx_fact_stock_sk ON fact_stock_indicators (stock_sk);
+
+CREATE INDEX IF NOT EXISTS idx_fact_date_sk ON fact_stock_indicators (date_sk);
+
+CREATE
+OR REPLACE PROCEDURE sp_load_stock_files_from_tmp () LANGUAGE plpgsql AS $$
 DECLARE
     inserted_dim INT := 0;
     inserted_fact INT := 0;
@@ -168,12 +183,12 @@ BEGIN
     -- ============================
     -- 1. Load dim_stock từ tmp_dim_stock
     -- ============================
-    INSERT INTO dim_stock(ticker)
-    SELECT DISTINCT t.ticker
-    FROM tmp_dim_stock t
-    LEFT JOIN dim_stock d ON t.ticker = d.ticker
-    WHERE d.ticker IS NULL;
-
+INSERT INTO dim_stock(ticker)
+SELECT DISTINCT t.ticker
+FROM tmp_dim_stock t
+WHERE NOT EXISTS (
+    SELECT 1 FROM dim_stock d WHERE d.ticker = t.ticker
+);
     GET DIAGNOSTICS inserted_dim = ROW_COUNT;
     RAISE NOTICE 'Dim_stock: % bản ghi mới insert', inserted_dim;
 
