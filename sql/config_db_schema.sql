@@ -1,11 +1,10 @@
 ------------------------------------------------------------
--- DROP TABLES
+-- DROP OLD TABLES
 ------------------------------------------------------------
 DROP TABLE IF EXISTS log CASCADE;
-
-DROP TABLE IF EXISTS config_load_staging CASCADE;
 DROP TABLE IF EXISTS config_extract CASCADE;
 DROP TABLE IF EXISTS config_transform CASCADE;
+DROP TABLE IF EXISTS config_load_staging CASCADE;
 DROP TABLE IF EXISTS config_load_datawarehouse CASCADE;
 DROP TABLE IF EXISTS config_load_datamart CASCADE;
 
@@ -38,7 +37,7 @@ VALUES (
     '1mo',
     '5m',
     './output/yfinance',
-    ARRAY['22130251@st.hcmuaf.edu.vn','huynhminhthang246@gmail.com'],
+    ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com'],
     3,
     TRUE,
     'Crawl dữ liệu cổ phiếu Mỹ hàng ngày',
@@ -78,7 +77,7 @@ VALUES (
     '/home/fragile/PostgresExports/fact_stock_indicators.csv',
     TRUE,
     'Default transform for stock prices',
-    ARRAY['22130251@st.hcmuaf.edu.vn']
+    ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']
 );
 
 
@@ -125,7 +124,7 @@ VALUES (
 
 
 ------------------------------------------------------------
--- TABLE: log  (không có emails)
+-- TABLE: log (không có emails)
 ------------------------------------------------------------
 CREATE TABLE log (
     id SERIAL PRIMARY KEY,
@@ -172,7 +171,7 @@ VALUES (
     TRUE,
     'admin',
     'admin',
-    ARRAY['22130251@st.hcmuaf.edu.vn']
+    ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']
 );
 
 
@@ -199,6 +198,9 @@ INSERT INTO config_load_datamart (
     retry_count, is_active, emails
 )
 VALUES
-    ('etl_load_fact_price_daily', '1. Load Fact Price Daily (Gốc)', 1, TRUE, 3, TRUE, ARRAY['22130251@st.hcmuaf.edu.vn']),
-    ('sp_refresh_dm_monthly_stock_summary', '2. Refresh Monthly Summary', 2, FALSE, 3, TRUE, ARRAY['22130251@st.hcmuaf.edu.vn']),
-    ('sp_refresh_dm_daily_volatility', '3. Refresh Daily Volatility', 3, FALSE, 3, TRUE, ARRAY['22130251@st.hcmuaf.edu.vn']);
+    ('etl_load_fact_price_daily', '1. Load Fact Price Daily (Gốc)', 1, TRUE, 3, TRUE,
+        ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']),
+    ('sp_refresh_dm_monthly_stock_summary', '2. Refresh Monthly Summary', 2, FALSE, 3, TRUE,
+        ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']),
+    ('sp_refresh_dm_daily_volatility', '3. Refresh Daily Volatility', 3, FALSE, 3, TRUE,
+        ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']);
