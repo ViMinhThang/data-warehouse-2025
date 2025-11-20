@@ -128,12 +128,14 @@ def process_dw_load(config, log_db, dw_db, email_service):
         log_message(
             log_db, "LOAD", config_id, "FAILURE", message=f"Lỗi khi load dữ liệu: {e}"
         )
+        emails = config.get("emails")
+        if not emails:
+            emails = []
         email_service.send_email(
-            to_addrs=[os.getenv("EMAIL_ADMIN", "admin@example.com")],
-            subject=f"[ETL LOAD] Lỗi Config ID={config_id}",
-            body=f"Lỗi khi load dữ liệu DW:\n\n{e}",
+            to_addrs=emails,
+            subject=f"[ETL Extract] Lỗi Config ID={config.get('id')}",
+            body=f"Lỗi tổng thể trong process_config:\n\n{e}",
         )
-
 
 def load_csv_to_tmp_tables(dim_path: str, fact_path: str, dw_db: DWDatabase):
     """

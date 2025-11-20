@@ -26,7 +26,8 @@ class ConfigDMDatabase(BaseDatabase):
             execution_order, 
             is_critical, 
             retry_count, 
-            is_active
+            is_active,
+            emails
         FROM config_load_datamart
         WHERE is_active = true
         ORDER BY execution_order ASC;

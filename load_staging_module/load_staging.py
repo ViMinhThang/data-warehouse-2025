@@ -147,10 +147,13 @@ def main():
                         "FAILURE",
                         message=f"Lỗi lần {retry_count}: {e}",
                     )
+                    emails = config.get("emails")
+                    if not emails:
+                        emails = []
                     email_service.send_email(
-                        to_addrs=[os.getenv("EMAIL_ADMIN", "admin@example.com")],
-                        subject=f"[ETL] Lỗi Load Staging (config ID={config_id})",
-                        body=f"Lỗi khi load dữ liệu staging:\n\n{e}",
+                        to_addrs=emails,
+                        subject=f"[ETL Extract] Lỗi Config ID={config.get('id')}",
+                        body=f"Lỗi tổng thể trong process_config:\n\n{e}",
                     )
 
             if not load_success:
@@ -168,6 +171,14 @@ def main():
         )
 
     finally:
+        emails = config.get("emails")
+        if not emails:
+            emails = []
+        email_service.send_email(
+            to_addrs=emails,
+            subject=f"[ETL Extract] Lỗi Config ID={config.get('id')}",
+            body=f"Lỗi tổng thể trong process_config:\n\n{e}",
+        )
         config_db.close()
         staging_db.close()
         log_db.close()

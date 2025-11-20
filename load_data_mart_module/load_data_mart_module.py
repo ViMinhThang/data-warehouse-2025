@@ -119,10 +119,13 @@ def main():
 
             if not success:
                 step_desc = step_config.get("description", "Unknown Task")
+                emails = step_config.get("emails")
+                if not emails:
+                    emails = []
                 email_service.send_email(
-                    to_addrs=[os.getenv("EMAIL_ADMIN", "admin@example.com")],
-                    subject=f"[ETL - ERROR] Pipeline dừng tại: {step_desc}",
-                    body=f"Lỗi tại bước ID {step_config['id']} ({step_config['procedure_name']}).\n\n{error_msg}",
+                    to_addrs=emails,
+                    subject=f"[ETL Extract] Lỗi Config ID={step_config.get('id')}",
+                    body=f"Lỗi tổng thể trong process_config:\n\n{e}",
                 )
 
                 is_critical = step_config.get("is_critical", False)

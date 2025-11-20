@@ -18,7 +18,7 @@ class ConfigDWDatabase(BaseDatabase):
         Lấy danh sách các config đang active
         """
         query = """
-        SELECT id, dim_path,fact_path,procedure, is_active, created_at, updated_at
+        SELECT id, dim_path,fact_path,procedure, is_active, created_at, updated_at, emails
         FROM config_load_datawarehouse
         WHERE is_active = TRUE;
         """

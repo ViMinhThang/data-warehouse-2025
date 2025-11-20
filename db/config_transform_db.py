@@ -9,7 +9,7 @@ class ConfigTransformDatabase(BaseDatabase):
         query = """
         SELECT id, rsi_window, roc_window, bb_window,
                source_table, procedure_transform,
-               dim_path, fact_path
+               dim_path, fact_path, emails
         FROM config_transform
         WHERE is_active = TRUE;
         """
@@ -22,7 +22,7 @@ class ConfigTransformDatabase(BaseDatabase):
         query = """
         SELECT rsi_window, roc_window, bb_window,
                dim_path, fact_path,
-               source_table, procedure_transform
+               source_table, procedure_transform, emails
         FROM config_transform
         WHERE is_active = TRUE
         ORDER BY id DESC

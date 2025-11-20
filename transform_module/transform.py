@@ -111,11 +111,14 @@ def run_transform_procedure(
             "FAILURE",
             message=f"Lỗi khi chạy TRANSFORM: {e}",
         )
+        emails = config.get("emails")
+        if not emails:
+            emails = []
         email_service.send_email(
-            to_addrs=[os.getenv("EMAIL_ADMIN", "admin@example.com")],
-            subject="[ETL Transform] Lỗi procedure transform",
-            body=f"Lỗi khi chạy procedure transform:\n\n{e}",
-        )
+            to_addrs=emails,
+            subject=f"[ETL Extract] Lỗi Config ID={config.get('id')}",
+            body=f"Lỗi tổng thể trong process_config:\n\n{e}",
+            )
         raise
 
 
