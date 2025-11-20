@@ -178,12 +178,14 @@ VALUES (
 ------------------------------------------------------------
 -- TABLE: config_load_datamart
 ------------------------------------------------------------
+-- 1. Tạo bảng cấu hình
+DROP TABLE IF EXISTS config_load_datamart;
 CREATE TABLE config_load_datamart (
     id SERIAL PRIMARY KEY,
     procedure_name VARCHAR(100) NOT NULL,
     description VARCHAR(255),
     execution_order INT NOT NULL,
-    is_critical BOOLEAN DEFAULT FALSE,
+    is_critical BOOLEAN DEFAULT FALSE, 
     retry_count INT DEFAULT 3,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -194,13 +196,35 @@ CREATE TABLE config_load_datamart (
 );
 
 INSERT INTO config_load_datamart (
-    procedure_name, description, execution_order, is_critical,
-    retry_count, is_active, emails
+    procedure_name, 
+    description, 
+    execution_order, 
+    is_critical, 
+    retry_count, 
+    is_active, 
+    emails
 )
 VALUES
-    ('etl_load_fact_price_daily', '1. Load Fact Price Daily (Gốc)', 1, TRUE, 3, TRUE,
-        ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']),
-    ('sp_refresh_dm_monthly_stock_summary', '2. Refresh Monthly Summary', 2, FALSE, 3, TRUE,
-        ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']),
-    ('sp_refresh_dm_daily_volatility', '3. Refresh Daily Volatility', 3, FALSE, 3, TRUE,
-        ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']);
+    ('sp_build_dm_trend_analysis', 
+     '1. Build Trend Analysis (Daily & Monthly Trends)', 
+     1, 
+     TRUE, 
+     3, 
+     TRUE, 
+     ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']),
+
+    ('sp_build_dm_stock_ranking', 
+     '2. Build Stock Ranking (Performance & Risk Profiles)', 
+     2, 
+     FALSE, 
+     3, 
+     TRUE, 
+     ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']),
+
+    ('sp_build_dm_market_overview', 
+     '3. Build Market Overview (Liquidity & Volume)', 
+     3, 
+     FALSE, 
+     3, 
+     TRUE, 
+     ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']);
