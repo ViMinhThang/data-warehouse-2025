@@ -1,6 +1,6 @@
 'use client';
 
-import { CartesianGrid, Line, LineChart, XAxis, YAxis, Area, AreaChart, ComposedChart } from 'recharts';
+import { CartesianGrid, Line, XAxis, YAxis, Area, ComposedChart, Brush } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { MarketLiquidity } from '@/lib/db';
@@ -104,6 +104,15 @@ export function MarketLiquidityChart({ data }: MarketLiquidityChartProps) {
                 strokeWidth={2}
                 dot={false}
                 strokeDasharray="5 5"
+              />
+              
+              {/* Added Zoom Brush */}
+              <Brush 
+                dataKey="date" 
+                height={30} 
+                stroke="var(--color-muted-foreground)"
+                fill="var(--color-background)"
+                tickFormatter={() => ""}
               />
             </ComposedChart>
           </ChartContainer>
