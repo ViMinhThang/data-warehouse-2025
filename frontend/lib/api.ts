@@ -10,8 +10,13 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
-export async function fetchDailyTrend(): Promise<DailyTrend[]> {
-  const res = await fetch(`${API_BASE_URL}/api/daily-trend`, {
+export async function fetchDailyTrend(ticker?: string): Promise<DailyTrend[]> {
+  const url = new URL(`${API_BASE_URL}/api/daily-trend`);
+  if (ticker) {
+    url.searchParams.append('ticker', ticker);
+  }
+
+  const res = await fetch(url.toString(), {
     cache: 'no-store',
   });
   
@@ -22,7 +27,6 @@ export async function fetchDailyTrend(): Promise<DailyTrend[]> {
   const json = await res.json();
   return json.data;
 }
-
 export async function fetchMonthlyTrend(): Promise<MonthlyTrend[]> {
   const res = await fetch(`${API_BASE_URL}/api/monthly-trend`, {
     cache: 'no-store',
