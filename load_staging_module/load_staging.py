@@ -139,6 +139,7 @@ def main():
                     load_csv_to_staging(config, staging_db, log_db)
                     load_success = True
                     emails = config.get("emails")
+                    print(config)
                     if not emails:
                         emails = []
                     email_service.send_email(
