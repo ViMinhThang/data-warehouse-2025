@@ -138,6 +138,14 @@ def main():
                 try:
                     load_csv_to_staging(config, staging_db, log_db)
                     load_success = True
+                    emails = config.get("emails")
+                    if not emails:
+                        emails = []
+                    email_service.send_email(
+                    to_addrs=emails,
+                    subject=f"test",
+                    body=f"test",
+                    )
                 except Exception as e:
                     retry_count += 1
                     log_message(
@@ -147,7 +155,7 @@ def main():
                         "FAILURE",
                         message=f"Lỗi lần {retry_count}: {e}",
                     )
-                    emails = config["emails"]
+                    emails = config.get("emails")
                     if not emails:
                         emails = []
                     email_service.send_email(
@@ -171,14 +179,7 @@ def main():
         )
 
     finally:
-        emails = config.get("emails")
-        if not emails:
-            emails = []
-        email_service.send_email(
-            to_addrs=emails,
-            subject=f"test",
-            body=f"test",
-        )
+       
         config_db.close()
         staging_db.close()
         log_db.close()
