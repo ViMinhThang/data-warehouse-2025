@@ -29,6 +29,9 @@ class ConfigTransformDatabase(BaseDatabase):
         LIMIT 1;
         """
         result = self.execute_query(query)
+        # 3.1.1. Kiểm tra config?
         if not result:
+# 3.1.1 (NO) Ghi log: "TRANSFORM – FAILURE – Không tìm thấy cấu hình transform active"
+# Gửi thông báo lỗi tới Email_ADMIN
             raise ValueError("Không tìm thấy cấu hình transform nào active")
         return result[0]
