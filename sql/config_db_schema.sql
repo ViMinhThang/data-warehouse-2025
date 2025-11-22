@@ -109,7 +109,7 @@ INSERT INTO config_load_staging (
 )
 VALUES (
     './output/yfinance',
-    'stg_market',
+    'stg_market_prices',
     'csv',
     TRUE,
     ',',
