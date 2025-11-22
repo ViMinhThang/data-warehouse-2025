@@ -71,7 +71,7 @@ INSERT INTO config_transform (
 )
 VALUES (
     14, 10, 20,
-    'stg_market_prices',
+    'stg_market_prices_tran',
     'sp_transform_market_prices',
     '/home/fragile/PostgresExports/dim_stock.csv',
     '/home/fragile/PostgresExports/fact_stock_indicators.csv',
@@ -109,7 +109,7 @@ INSERT INTO config_load_staging (
 )
 VALUES (
     './output/yfinance',
-    'stg_market',
+    'stg_market_prices',
     'csv',
     TRUE,
     ',',
