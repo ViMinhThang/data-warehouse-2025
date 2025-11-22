@@ -72,7 +72,7 @@ INSERT INTO config_transform (
 VALUES (
     14, 10, 20,
     'stg_market_prices_tran',
-    'sp_transform_market_prices',
+    'sp_transform_market_prices_tran',
     '/home/fragile/PostgresExports/dim_stock.csv',
     '/home/fragile/PostgresExports/fact_stock_indicators.csv',
     TRUE,
