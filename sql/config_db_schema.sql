@@ -37,7 +37,7 @@ VALUES (
     '1mo',
     '5m',
     './output/yfinance',
-    ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com'],
+    ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com','22130307@st.hcmuaf.edu.vn'],
     3,
     TRUE,
     'Crawl dữ liệu cổ phiếu Mỹ hàng ngày',
@@ -77,7 +77,7 @@ VALUES (
     '/home/fragile/PostgresExports/fact_stock_indicators.csv',
     TRUE,
     'Default transform for stock prices',
-    ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']
+    ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com','22130307@st.hcmuaf.edu.vn']
 );
 
 
@@ -119,7 +119,7 @@ VALUES (
     'Load dữ liệu cổ phiếu Mỹ vào staging',
     'admin',
     'admin',
-    ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']
+    ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com','22130307@st.hcmuaf.edu.vn']
 );
 
 
@@ -171,7 +171,7 @@ VALUES (
     TRUE,
     'admin',
     'admin',
-    ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']
+    ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com','22130307@st.hcmuaf.edu.vn']
 );
 
 
@@ -211,7 +211,7 @@ VALUES
      TRUE, 
      3, 
      TRUE, 
-     ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']),
+     ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com','22130307@st.hcmuaf.edu.vn']),
 
     ('sp_build_dm_stock_ranking', 
      '2. Build Stock Ranking (Performance & Risk Profiles)', 
@@ -219,7 +219,7 @@ VALUES
      FALSE, 
      3, 
      TRUE, 
-     ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']),
+     ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com','22130307@st.hcmuaf.edu.vn']),
 
     ('sp_build_dm_market_overview_xxx', 
      '3. Build Market Overview (Liquidity & Volume)', 
@@ -227,4 +227,4 @@ VALUES
      FALSE, 
      3, 
      TRUE, 
-     ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']);
+     ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com','22130307@st.hcmuaf.edu.vn']);
