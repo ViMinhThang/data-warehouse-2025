@@ -221,7 +221,7 @@ VALUES
      TRUE, 
      ARRAY['22130251@st.hcmuaf.edu.vn','nguyenvanvang2626@gmail.com']),
 
-    ('sp_build_dm_market_overview', 
+    ('sp_build_dm_market_overview_xxx', 
      '3. Build Market Overview (Liquidity & Volume)', 
      3, 
      FALSE, 
