@@ -55,8 +55,11 @@ def run_transform_procedure(
     log_db: LogDatabase,
     email_service: EmailService,
 ):
+# 3.1. Bắt đầu khối try:
+# Exception
+# Để kiểm tra các lỗi tổng thể trong quá trình Transform
     try:
-# 3.1. khởi tạo config = config_db.get_latest_active_config()
+# 3.2. khởi tạo config = config_db.get_latest_active_config()
 # Nhằm lấy cấu hình TRANSFORM mới nhất
 # Với các giá trị config gồm (rsi_window, roc_window, bb_window, dim_path, 
 # fact_path, source_table,procedure_transform) 
@@ -67,13 +70,13 @@ def run_transform_procedure(
         dim_path = config["dim_path"]
         fact_path = config["fact_path"]
         procedure = config.get("procedure_transform", "sp_transform_market_prices")
-# 3.1.1 (YES) 3.2. Khởi tạo latest_load_log = log_db.get_latest_log("LOAD_STAGING", None)
+# 3.2.1 (YES) 3.3. Khởi tạo latest_load_log = log_db.get_latest_log("LOAD_STAGING", None)
 # Nhằm lấy trạng thái LOAD_STAGING mới nhất
         latest_load_log = log_db.get_latest_log("LOAD_STAGING", None)
-# 3.2.1. Load_staging đã thành công chưa? 
+# 3.3.1. Load_staging đã thành công chưa? 
 # Có log hoặc status == SUCCESS
         if not latest_load_log or latest_load_log.get("status") != "SUCCESS":
-            # 3.2.1 (NO) Ghi log: "TRANSFORM – WARNING – LOAD_STAGING chưa thành công, bỏ qua TRANSFORM. "
+            # 3.3.1 (NO) Ghi log: "TRANSFORM – WARNING – LOAD_STAGING chưa thành công, bỏ qua TRANSFORM. "
             log_message(
                 log_db,
                 "TRANSFORM",
@@ -83,7 +86,7 @@ def run_transform_procedure(
             )
             print("Bỏ qua TRANSFORM vì LOAD_STAGING chưa SUCCESS.")
             return
-        # 3.2.1 (YES) 3.3. Ghi log: "TRANSFORM – READY – Bắt đầu chạy procedure transform" 
+        # 3.3.1 (YES) 3.4. Ghi log: "TRANSFORM – READY – Bắt đầu chạy procedure transform" 
         log_message(
             log_db,
             "TRANSFORM",
@@ -91,9 +94,9 @@ def run_transform_procedure(
             "READY",
             message="Bắt đầu chạy procedure transform.",
         )
-        # 3.4. Bắt đầu chạy procedure transform
+        # 3.5. Bắt đầu chạy procedure transform
         with staging_db.conn.cursor() as cursor:
-            # 3.4.1. Ghi log: "TRANSFORM – PROCESSING – Đang chạy {procedure}..."
+            # 3.5.1. Ghi log: "TRANSFORM – PROCESSING – Đang chạy {procedure}..."
             log_message(
                 log_db,
                 "TRANSFORM",
@@ -101,7 +104,7 @@ def run_transform_procedure(
                 "PROCESSING",
                 message=f"Đang chạy {procedure}...",
             )
-# 3.4.2. Thực thi CALL {procedure}(rsi_window, roc_window, bb_window)
+# 3.5.2. Thực thi CALL {procedure}(rsi_window, roc_window, bb_window)
 # Nhằm gọi procedure bên sql để thực hiện:
 # Cập nhập dim_stock
 # Tính ROC, RSI, BB
@@ -110,9 +113,9 @@ def run_transform_procedure(
             cursor.execute(
                 f"CALL {procedure}(%s, %s, %s);", (rsi_window, roc_window, bb_window)
             )
-            # 3.4.3. Thực hiện commit dữ liệu DB staging
+            # 3.5.3. Thực hiện commit dữ liệu DB staging
             staging_db.conn.commit()
-# 3.4.4. Ghi log: "TRANSFORM – SUCCESS – Procedure transform hoàn tất"
+# 3.5.4. Ghi log: "TRANSFORM – SUCCESS – Procedure transform hoàn tất"
         log_message(
             log_db,
             "TRANSFORM",
@@ -121,7 +124,7 @@ def run_transform_procedure(
             message="Procedure transform hoàn tất.",
         )
         print("TRANSFORM completed successfully.")
-# 3.5. Gọi hàm export_table_to_csv(staging_db, table_name, file_path)
+# 3.6. Gọi hàm export_table_to_csv(staging_db, table_name, file_path)
 # Thực hiện xuất dữ liệu ra file CSV lần lượt với hai bảng dim_stock và fact_stock_indicators
         export_table_to_csv(staging_db, "dim_stock", dim_path)
         export_table_to_csv(staging_db, "fact_stock_indicators", fact_path)
@@ -144,23 +147,23 @@ def run_transform_procedure(
             )
         raise
 
-# 3.5. Gọi hàm export_table_to_csv(staging_db, table_name, file_path)
+# 3.6. Gọi hàm export_table_to_csv(staging_db, table_name, file_path)
 # Thực hiện xuất dữ liệu ra file CSV lần lượt với hai bảng dim_stock và fact_stock_indicators
 def export_table_to_csv(staging_db, table_name, file_path):
     with staging_db.conn.cursor() as cursor:
-# 3.5.1. Thực hiện truy vấn (SELECT * FROM {table_name})
+# 3.6.1. Thực hiện truy vấn (SELECT * FROM {table_name})
 # Để lấy toàn bộ dữ liệu từ bảng staging
         cursor.execute(f"SELECT * FROM {table_name}")
-        # 3.5.2. Ghi tên cột làm header CSV 
+        # 3.6.2. Ghi tên cột làm header CSV 
         rows = cursor.fetchall()
         colnames = [desc[0] for desc in cursor.description]
 
     with open(file_path, "w", newline="") as f:
-        # 3.5.3. Ghi dữ liệu rows xuống file CSV
+        # 3.6.3. Ghi dữ liệu rows xuống file CSV
         writer = csv.writer(f)
         writer.writerow(colnames)
         writer.writerows(rows)
-        # 3.5.4. Console: "Export {len(rows)} rows from {table_name} to {file_path}"
+        # 3.6.4. Console: "Export {len(rows)} rows from {table_name} to {file_path}"
     print(f"Export {len(rows)} rows from {table_name} to {file_path}")
 
 # 1. Gọi hàm main(), để bắt đầu khởi động quá trình TRANSFORM
