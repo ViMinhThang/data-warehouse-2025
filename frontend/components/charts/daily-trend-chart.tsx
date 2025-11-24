@@ -146,6 +146,7 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
                 axisLine={false}
                 tickMargin={8}
                 minTickGap={32}
+                interval="preserveStartEnd"
               />
               <YAxis 
                 tickLine={false}

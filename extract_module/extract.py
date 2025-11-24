@@ -46,7 +46,7 @@ def init_services():
 
 
 def extract_ticker_data(ticker, period, interval, config_id, log_db):
-    # 10.8.7.1 Ghi log PROCESSING với message "Đang extract {ticker}..."."""
+    # 10.8.7.1 Ghi log stage = EXTRACT status = PROCESSING với message "Đang extract {ticker}..."."""
     log_message(
         log_db,
         "EXTRACT",
@@ -59,7 +59,7 @@ def extract_ticker_data(ticker, period, interval, config_id, log_db):
     data = fetch_yfinance_data(ticker, period, interval)
     # 10.8.7.3 Kiểm tra dữ liệu trả về có rỗng không?
     if data.empty:
-        # 10.8.7.4 Ném ra ValueError.
+        # 10.8.7.4 Ném ra ValueError Không có dữ liệu trả về cho ticker từ Yahoo Finance.
         raise ValueError(f"Không có dữ liệu trả về cho {ticker} từ Yahoo Finance.")
 
     # 10.8.7.5  Gọi compute_stock_indicators(data, ticker) để tính các chỉ báo kỹ thuật.
@@ -70,7 +70,7 @@ def extract_ticker_data(ticker, period, interval, config_id, log_db):
     #        Lặp qua từng dòng trong DataFrame.  Với mỗi dòng, tạo một dict gồm:  ticker: mã cổ phiếu  datetime_utc: thời điểm của dòng dữ liệu (index của DataFrame)  close, volume, diff, percent_change_close: các giá trị tương ứng trong dòng  extracted_at: thời điểm trích xuất (thời gian hiện tại UTC)  Trả về một danh sách các dict.
     records = build_records_from_df(ticker, indicators)
 
-    # 10.8.7.7 Ghi log PROCESSING với message "Extract {ticker} thành công.".
+    # 10.8.7.7 Ghi log stage = EXTRACT status = PROCESSING với message "Extract {ticker} thành công.".
     log_message(
         log_db,
         "EXTRACT",
@@ -90,7 +90,7 @@ def run_crawl_data_with_config(config, log_db, config_id):
     tickers = parse_tickers(config.get("tickers", []))
     period = config.get("period", "1mo")
     interval = config.get("interval", "1d")
-    # 10.8.3 Ghi log PROCESSING với message "Bắt đầu crawl dữ liệu cho {len(tickers)} ticker.".
+    # 10.8.3 Ghi log stage = EXTRACT status =  PROCESSING với message "Bắt đầu crawl dữ liệu cho {len(tickers)} ticker.".
     log_message(
         log_db,
         "EXTRACT",
@@ -109,7 +109,7 @@ def run_crawl_data_with_config(config, log_db, config_id):
             # 10.8.8 Thêm các bản ghi (records) trả về vào all_rows(append)
             all_rows.extend(records)
         except Exception as e:
-            # 10.8.6.1 Ghi log FAILURE với message "Lỗi khi extract {ticker}: {lỗi}".
+            # 10.8.6.1 Ghi log stage = EXTRACT status =  FAILURE với message "Lỗi khi extract {ticker}: {lỗi}".
             log_message(
                 log_db,
                 "EXTRACT",
@@ -119,12 +119,12 @@ def run_crawl_data_with_config(config, log_db, config_id):
             )
     # 10.8.9 Kiểm tra all_rows có rỗng không?
     if not all_rows:
-        # 10.8.10 Nếu rỗng (không lấy được dữ liệu của ticker nào): Ném ra RuntimeError để hàm process_config bắt được và thực hiện retry.
+        # 10.8.10 Nếu rỗng (không lấy được dữ liệu của ticker nào): Ném ra RuntimeError để hàm process_config bắt được.
         raise RuntimeError("Không có dữ liệu hợp lệ cho bất kỳ ticker nào.")
 
     # 10.8.11 Tạo DataFrame df từ all_rows
     df = pd.DataFrame(all_rows).round(4)
-    # 10.8.12 Ghi log PROCESSING với message "Crawl thành công {len(df)} bản ghi.".
+    # 10.8.12 Ghi log stage = EXTRACT status = PROCESSING với message "Crawl thành công {len(df)} bản ghi.".
     log_message(
         log_db,
         "EXTRACT",
@@ -151,7 +151,7 @@ def save_extract_result(df, config, config_id, log_db):
     # 10.9.4 Ghi DataFrame df ra file CSV tại đường dẫn đã tạo.
     df.round(4).to_csv(file_path, index=False)
 
-    # 10.9.5 Ghi log SUCCESS với message "Đã ghi file kết quả: {file_path}".
+    # 10.9.5 Ghi log stage = EXTRACT status = SUCCESS với message "Đã ghi file kết quả: {file_path}".
     log_message(
         log_db,
         "EXTRACT",
@@ -168,7 +168,7 @@ def save_extract_result(df, config, config_id, log_db):
 
 
 def process_config(config, log_db, email_service):
-    # 10.2Lấy config_id từ cấu hình.Ghi log READY với message "Bắt đầu xử lý config.".
+    # 10.2. Lấy config_id từ cấu hình.Ghi log READY với message "Bắt đầu xử lý config.".
     config_id = config["id"]
     log_message(log_db, "EXTRACT", config_id, "READY", message="Bắt đầu xử lý config.")
 
@@ -230,7 +230,7 @@ def process_config(config, log_db, email_service):
     # 10.12 Kiểm tra craw_success.
 
     if craw_success:
-        # 10.13 Ghi log SUCCESS với message "Extract hoàn tất thành công.".
+        # 10.13 Ghi log stage = EXTRACT status =  SUCCESS với message "Extract hoàn tất thành công.".
         log_message(
             log_db,
             "EXTRACT",
@@ -239,7 +239,7 @@ def process_config(config, log_db, email_service):
             message="Extract hoàn tất thành công.",
         )
     else:
-        # 10.14 Ghi log FAILURE với message "Thất bại sau khi retry tối đa.".
+        # 10.14 Ghi stage = EXTRACT status = FAILURE với message "Thất bại sau khi retry tối đa.".
         log_message(
             log_db,
             "EXTRACT",
@@ -299,7 +299,7 @@ def main():
 
                 # 9.1Ghi Log FAILURE lỗi xử lý config gửi email
             except Exception as e:
-                # 11.2 Tăng biến fail lên 1. Ghi log FAILURE .Gửi email cho admin.
+                # 11.2.Nếu thất bại (bắt được exception):Tăng biến fail lên 1. Ghi log stage = EXTRACT status = FAILURE .Gửi email cho admin.
                 fail += 1
                 log_message(
                     log_db,
@@ -317,7 +317,7 @@ def main():
                     body=f"Lỗi tổng thể trong process_config:\n\n{e}",
                 )
 
-        # 5.1 Ghi log lỗi tổng thể trong main
+        # 5.1 Ghi log stage = EXTRACT status = FAILURE lỗi tổng thể trong main
     except Exception as e:
         log_message(
             log_db,
