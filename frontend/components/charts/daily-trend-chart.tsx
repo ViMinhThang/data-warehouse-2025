@@ -1,10 +1,34 @@
-'use client';
+"use client";
 
-import { CartesianGrid, Line, LineChart, XAxis, YAxis, Bar, BarChart, Area, AreaChart, Brush } from 'recharts';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
-import { DailyTrend } from '@/lib/db';
-import { format, isValid, parseISO } from 'date-fns';
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  XAxis,
+  YAxis,
+  Bar,
+  BarChart,
+  Area,
+  AreaChart,
+  Brush,
+} from "recharts";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from "@/components/ui/chart";
+import { DailyTrend } from "@/lib/db";
+import { format, isValid, parseISO } from "date-fns";
 
 interface DailyTrendChartProps {
   data: DailyTrend[];
@@ -42,29 +66,29 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
   // Format data for recharts with safety checks
   const chartData = data.map((item) => {
     // Safely handle date parsing
-    let dateStr = '';
+    let dateStr = "";
     try {
-        const date = new Date(item.full_date);
-        if (isValid(date)) {
-            dateStr = format(date, 'MMM dd');
-        } else {
-             // Fallback if date is invalid string
-             dateStr = item.full_date; 
-        }
-    } catch (e) {
+      const date = new Date(item.full_date);
+      if (isValid(date)) {
+        dateStr = format(date, "MMM dd");
+      } else {
+        // Fallback if date is invalid string
         dateStr = item.full_date;
+      }
+    } catch (e) {
+      dateStr = item.full_date;
     }
 
     return {
-        date: dateStr,
-        fullDate: item.full_date,
-        avgClose: item.avg_close != null ? Number(item.avg_close) : 0,
-        maxClose: item.max_close != null ? Number(item.max_close) : 0,
-        minClose: item.min_close != null ? Number(item.min_close) : 0,
-        volume: item.total_volume != null ? Number(item.total_volume) : 0,
-        // Default RSI/ROC to null if missing so chart doesn't plot 0 lines for missing data
-        rsi: item.avg_rsi != null ? Number(item.avg_rsi) : undefined,
-        roc: item.avg_roc != null ? Number(item.avg_roc) : undefined,
+      date: dateStr,
+      fullDate: item.full_date,
+      avgClose: item.avg_close != null ? Number(item.avg_close) : 0,
+      maxClose: item.max_close != null ? Number(item.max_close) : 0,
+      minClose: item.min_close != null ? Number(item.min_close) : 0,
+      volume: item.total_volume != null ? Number(item.total_volume) : 0,
+      // Default RSI/ROC to null if missing so chart doesn't plot 0 lines for missing data
+      rsi: item.avg_rsi != null ? Number(item.avg_rsi) : undefined,
+      roc: item.avg_roc != null ? Number(item.avg_roc) : undefined,
     };
   });
 
@@ -73,37 +97,49 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
       {/* Price Chart */}
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Daily Stock Trend{ticker ? ` - ${ticker}` : ''}</CardTitle>
-          <CardDescription>
-            Price movements over time
-          </CardDescription>
+          <CardTitle>Daily Stock Trend{ticker ? ` - ${ticker}` : ""}</CardTitle>
+          <CardDescription>Price movements over time</CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-[400px] min-h-[400px] w-full">
-            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <ChartContainer
+            config={chartConfig}
+            className="h-[400px] min-h-[400px] w-full"
+          >
+            <AreaChart
+              data={chartData}
+              margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+            >
               <defs>
                 <linearGradient id="fillAvgClose" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-avgClose)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-avgClose)" stopOpacity={0.1} />
+                  <stop
+                    offset="5%"
+                    stopColor="var(--color-avgClose)"
+                    stopOpacity={0.8}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="var(--color-avgClose)"
+                    stopOpacity={0.1}
+                  />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis 
-                dataKey="date" 
+              <XAxis
+                dataKey="date"
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
                 minTickGap={32}
               />
-              <YAxis 
+              <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                domain={['auto', 'auto']}
+                domain={["auto", "auto"]}
               />
-              <ChartTooltip 
+              <ChartTooltip
                 cursor={false}
-                content={<ChartTooltipContent indicator="dot" />} 
+                content={<ChartTooltipContent indicator="dot" />}
               />
               <ChartLegend content={<ChartLegendContent />} />
               <Area
@@ -116,12 +152,12 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
                 activeDot={{ r: 6 }}
               />
               {/* Added Brush for Zooming */}
-              <Brush 
-                dataKey="date" 
-                height={30} 
+              <Brush
+                dataKey="date"
+                height={30}
                 stroke="var(--color-muted-foreground)"
                 fill="var(--color-background)"
-                tickFormatter={() => ""} 
+                tickFormatter={() => ""}
               />
             </AreaChart>
           </ChartContainer>
@@ -132,35 +168,40 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
       <Card className="w-full">
         <CardHeader>
           <CardTitle>Trading Volume</CardTitle>
-          <CardDescription>
-            Daily trading volume
-          </CardDescription>
+          <CardDescription>Daily trading volume</CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-[200px] min-h-[200px] w-full">
-            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <ChartContainer
+            config={chartConfig}
+            className="h-[200px] min-h-[200px] w-full"
+          >
+            <BarChart
+              data={chartData}
+              margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+            >
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis 
-                dataKey="date" 
+              <XAxis
+                dataKey="date"
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
                 minTickGap={32}
-                interval="preserveStartEnd"
               />
-              <YAxis 
+              <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                tickFormatter={(val) => (val > 1000000 ? `${(val/1000000).toFixed(1)}M` : val)}
+                tickFormatter={(val) =>
+                  val > 1000000 ? `${(val / 1000000).toFixed(1)}M` : val
+                }
               />
-              <ChartTooltip 
-                cursor={{ fill: 'hsl(var(--muted)/0.5)' }}
-                content={<ChartTooltipContent />} 
+              <ChartTooltip
+                cursor={{ fill: "hsl(var(--muted)/0.5)" }}
+                content={<ChartTooltipContent />}
               />
-              <Bar 
-                dataKey="volume" 
-                fill="var(--color-volume)" 
+              <Bar
+                dataKey="volume"
+                fill="var(--color-volume)"
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>
@@ -172,16 +213,20 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
       <Card className="w-full">
         <CardHeader>
           <CardTitle>Technical Indicators</CardTitle>
-          <CardDescription>
-            RSI and ROC indicators
-          </CardDescription>
+          <CardDescription>RSI and ROC indicators</CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-[200px] min-h-[200px] w-full">
-            <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <ChartContainer
+            config={chartConfig}
+            className="h-[200px] min-h-[200px] w-full"
+          >
+            <LineChart
+              data={chartData}
+              margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+            >
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis 
-                dataKey="date" 
+              <XAxis
+                dataKey="date"
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
@@ -191,30 +236,27 @@ export function DailyTrendChart({ data, ticker }: DailyTrendChartProps) {
                 The screenshot showed values like 6,923,074 on the axis, implying data was out of the [0, 100] range
                 or incorrectly mapped. Setting to auto allows debugging or proper scaling if ROC > 100.
               */}
-              <YAxis 
+              <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                domain={['auto', 'auto']} 
+                domain={["auto", "auto"]}
               />
-              <ChartTooltip 
-                cursor={false}
-                content={<ChartTooltipContent />} 
-              />
+              <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
               <ChartLegend content={<ChartLegendContent />} />
-              <Line 
-                type="monotone" 
-                dataKey="rsi" 
-                stroke="var(--color-rsi)" 
+              <Line
+                type="monotone"
+                dataKey="rsi"
+                stroke="var(--color-rsi)"
                 strokeWidth={2}
                 dot={false}
                 activeDot={{ r: 4 }}
-                connectNulls 
+                connectNulls
               />
-              <Line 
-                type="monotone" 
-                dataKey="roc" 
-                stroke="var(--color-roc)" 
+              <Line
+                type="monotone"
+                dataKey="roc"
+                stroke="var(--color-roc)"
                 strokeWidth={2}
                 dot={false}
                 activeDot={{ r: 4 }}

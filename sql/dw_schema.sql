@@ -206,7 +206,7 @@ BEGIN
         f.bb_lower,
         f.created_at
     FROM tmp_fact_stock f
-    JOIN dim_date d ON d.full_date = f.datetime_utc::DATE
+    JOIN dim_date d ON d.full_date = (f.datetime_utc AT TIME ZONE 'UTC')::DATE
     LEFT JOIN fact_stock_indicators fi
         ON fi.stock_sk = f.stock_sk AND fi.date_sk = d.date_sk
     WHERE fi.record_sk IS NULL;
