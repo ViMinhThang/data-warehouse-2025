@@ -149,7 +149,7 @@ def process_dw_load(config, log_db, dw_db, email_service):
     except Exception as e:
         # - Ghi log: "LOAD_DW - config_id - FAILURE - Lỗi khi load dữ liệu: exception"
         log_message(
-            log_db, "LOAD", config_id, "FAILURE", message=f"Lỗi khi load dữ liệu: {e}"
+            log_db, "LOAD_DW", config_id, "FAILURE", message=f"Lỗi khi load dữ liệu: {e}"
         )
         # - Trích xuất email từ config
         # emails = config.get("emails")
@@ -233,6 +233,20 @@ def main():
         
         # 3. Lấy log TRANSFORM mới nhất
         # Gọi latest_extract_log = log_db.get_latest_log("TRANSFORM", None), gọi tới cơ sở dữ liệu log để lấy bảng ghi log TRANSFORM gần nhất
+        latest_extract_log = log_db.get_latest_log("TRANSFORM", None)
+
+        # 3.1. Kiểm trạng thái log TRANSFORM "SUCCESS ?"
+        if not latest_extract_log or latest_extract_log.get("status") != "SUCCESS":
+            # Ghi log: "LOAD_DW – WARNING – TRANSFROM chưa thành công, bỏ qua LOAD_DW. "
+            log_message(
+                log_db,
+                "LOAD_DW",
+                None,
+                "WARNING",
+                message="Log TRANSFORM mới nhất chưa thành công, bỏ qua quá trình LOAD_DW.",
+            )
+            print("Quá trình LOAD_DW bị bỏ qua vì TRANSFORM chưa thành công.")
+            return
 
         # 4. Lấy ra danh sách các config còn active trong bảng config
         # configs = config_db.get_active_configs()    
